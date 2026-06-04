@@ -138,7 +138,7 @@ function App() {
   const timerRef = useRef(null);
 
   // Theme (dark / light)
-  const [theme, setTheme] = useState('dark');
+  const [theme, setTheme] = useState('light');
 
   // DOM Refs for cell inputs and lists
   const cellRefs = useRef({});
@@ -568,7 +568,16 @@ function App() {
   const getNextCellInWord = (row, col, dir) => {
     const cells = getWordCells(row, col, dir);
     const currIdx = cells.findIndex(c => c.row === row && c.col === col);
-    if (currIdx !== -1 && currIdx < cells.length - 1) {
+    if (currIdx === -1) return null;
+    // Skip over cells that are already filled, find the next empty one
+    for (let i = currIdx + 1; i < cells.length; i++) {
+      const c = cells[i];
+      if (!userGrid[c.row] || userGrid[c.row][c.col] === '') {
+        return c;
+      }
+    }
+    // If all remaining cells are filled, just go to the next cell (allows overwriting)
+    if (currIdx < cells.length - 1) {
       return cells[currIdx + 1];
     }
     return null;
