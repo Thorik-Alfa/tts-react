@@ -382,6 +382,7 @@ function App() {
       localStorage.setItem('tts_leaderboard', JSON.stringify(data));
       setScoreSubmitted(true);
       setLeaderboardData(data);
+      setShowSuccess(false);
       setView('leaderboard');
       setSubmittingScore(false);
     } catch (err) {
