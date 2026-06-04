@@ -204,14 +204,6 @@ function App() {
       foundClue = clueList.find(c => c.number === number);
     }
     setActiveClue(foundClue);
-
-    if (foundClue) {
-      const refMap = selectedDirection === 'H' ? acrossClueRefs.current : downClueRefs.current;
-      const element = refMap[foundClue.number];
-      if (element) {
-        element.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-      }
-    }
   }, [selectedCell, selectedDirection, gridData]);
 
   // Format timer as MM:SS
