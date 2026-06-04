@@ -540,7 +540,9 @@ function App() {
     const isLocked = lockedCells.some(cell => cell.row === row && cell.col === col);
     if (isLocked) return;
 
-    const value = e.target.value.toUpperCase();
+    const raw = e.target.value.toUpperCase();
+    // Take the last character typed so overwriting works without Backspace
+    const value = raw.slice(-1);
     if (value !== '' && !/^[A-Z]$/.test(value)) {
       return;
     }
@@ -1076,7 +1078,7 @@ function App() {
                           value={userGrid[rIdx]?.[cIdx] || ''}
                           onChange={(e) => handleInputChange(e, rIdx, cIdx)}
                           onKeyDown={(e) => handleKeyDown(e, rIdx, cIdx)}
-                          maxLength={1}
+                          maxLength={2}
                           disabled={!timerActive}
                           readOnly={isLocked}
                           style={{ fontSize: cellFontSize, paddingTop: inputPaddingTop }}
