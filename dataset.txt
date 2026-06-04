@@ -1,0 +1,201 @@
+No	Word	Clue	Vertical/Horizontal
+1	Apple 	 A red or green fruit 	 H
+2	Ball 	 A round toy you can throw and kick 	 H
+3	Cat 	 A small animal that says meow 	 H
+4	Dog 	 A friendly animal that barks 	 H
+5	Fish 	 An animal that lives in water 	 H
+6	Bird 	 A creature that flies in the sky 	 H
+7	Cow 	 A big farm animal that gives milk 	 H
+8	Pig 	 A pink farm animal that goes oink 	 H
+9	Duck 	 A bird that swims in ponds 	 H
+10	Ship 	 A big boat that sails on the sea 	 V
+11	Jump 	 To push your body into the air 	 H
+12	Run 	 To move very fast with your legs 	 H
+13	Walk 	 To move slowly with your feet 	 H
+14	Sing 	 To make music with your voice 	 H
+15	Dance 	 To move your body to music 	 H
+16	Play 	 To have fun with friends 	 H
+17	Game 	 A fun activity to play 	 H
+18	Book 	 Something you read with pages 	 V
+19	Desk 	 A table where you sit and write 	 H
+20	Chair 	 A place to sit in the classroom 	 V
+21	Pencil 	 Something you write with that you can sharpen 	 V
+22	Pen 	 A writing tool that uses ink 	 H
+23	Paper 	 Something you draw or write on 	 V
+24	Eraser 	 A thing that removes pencil marks 	 V
+25	Bag 	 You put your books and things here 	 H
+26	School 	 A place where you learn and read 	 V
+27	Class 	 A group of students with a teacher 	 H
+28	Teacher 	 The person who helps you learn 	 V
+29	Student 	 Someone who goes to school 	 V
+30	Learn 	 To get new knowledge 	 H
+31	Read 	 To look at words and understand them 	 V
+32	Write 	 To make letters and words on paper 	 V
+33	Draw 	 To make a picture with a pencil 	 V
+34	Sing 	 To make music with your voice 	 H
+35	Dance 	 To move your body to music 	 H
+36	Jump 	 To push your body into the air 	 H
+37	Run 	 To move very fast with your legs 	 H
+38	Walk 	 To move slowly with your feet 	 H
+39	Stand 	 To be on your feet 	 H
+40	Sit 	 To rest on a chair or the floor 	 H
+41	Sleep 	 To close your eyes and rest at night 	 V
+42	Wake 	 To stop sleeping and open your eyes 	 V
+43	Eat 	 To put food in your mouth 	 H
+44	Drink 	 To put liquid in your mouth 	 H
+45	Food 	 Something you eat to feel full 	 V
+46	Water 	 A clear liquid you drink 	 V
+47	Milk 	 A white drink from cows 	 H
+48	Juice 	 A drink made from fruit 	 V
+49	Rice 	 White food that goes with many meals 	 H
+50	Bread 	 A soft food made from flour 	 H
+51	Cake 	 A sweet food for birthdays 	 V
+52	Egg 	 Something a chicken lays 	 H
+53	Chicken 	 A bird we eat for food 	 V
+54	Fish 	 A food that comes from the sea 	 H
+55	Meat 	 Food that comes from animals 	 H
+56	Soup 	 A hot liquid food with vegetables or meat 	 V
+57	Sun 	 A bright yellow ball in the sky 	 H
+58	Moon 	 A round object in the sky at night 	 V
+59	Star 	 A tiny light in the night sky 	 V
+60	Sky 	 The space above the earth 	 V
+61	Cloud 	 Something white in the sky 	 H
+62	Rain 	 Water that falls from the sky 	 H
+63	Snow 	 White cold stuff that falls in winter 	 V
+64	Fire 	 Something very hot and bright 	 V
+65	Hot 	 Not cold feels like the sun 	 H
+66	Cold 	 Not warm feels like ice 	 H
+67	Warm 	 Not too hot, not too cold 	 H
+68	Cool 	 A little cold but not freezing 	 H
+69	Black 	 A dark color like night 	 V
+70	White 	 A bright color like snow 	 V
+71	Red 	 The color of an apple 	 H
+72	Blue 	 The color of the sky 	 H
+73	Green 	 The color of grass 	 H
+74	Yellow 	 The color of the sun 	 H
+75	Purple 	 A mix of red and blue 	 V
+76	Orange 	 A mix of red and yellow 	 V
+77	Pink 	 A light color like a flower 	 V
+78	Brown 	 The color of chocolate 	 H
+79	Gray 	 A color between black and white 	 V
+80	Big 	 Larger than something else 	 H
+81	Small 	 Not big very little 	 H
+82	Tall 	 Very high up 	 H
+83	Short 	 Not tall not long 	 H
+84	Long 	 Taller in size from one end to the other 	 V
+85	Low 	 Not high near the ground 	 H
+86	Fast 	 Very quick in movement 	 H
+87	Slow 	 Not fast takes more time 	 H
+88	Good 	 Something nice or correct 	 H
+89	Bad 	 The opposite of good 	 H
+90	Happy 	 Feeling very joyful 	 V
+91	Sad 	 Feeling unhappy 	 H
+92	Angry 	 Feeling strong upset 	 V
+93	Funny 	 Something that makes you laugh 	 V
+94	Silly 	 Not serious a little crazy 	 V
+95	Smart 	 Very clever or intelligent 	 V
+96	Quiet 	 Not loud very soft 	 V
+97	Loud 	 Very noisy and strong 	 H
+98	Light 	 Not heavy easy to lift 	 H
+99	Heavy 	 Very hard to lift 	 H
+100	Clean 	 Not dirty fresh and tidy 	 V
+101	Dirty 	 Not clean has dust or mud 	 V
+102	New 	 Something fresh that is not old 	 H
+103	Old 	 Something from long ago 	 H
+104	Begin 	 To start something 	 H
+105	Finish 	 To end something 	 H
+106	Open 	 To let something come out or in 	 H
+107	Close 	 To stop something from opening 	 H
+108	Push 	 To move something away 	 H
+109	Pull 	 To bring something closer 	 H
+110	Go 	 To move from one place to another 	 H
+111	Come 	 To move toward someone or something 	 H
+112	Stop 	 To not move anymore 	 H
+113	Start 	 To begin an action 	 H
+114	Yes 	 A word that means agreement 	 H
+115	No 	 A word that means disagreement 	 H
+116	Maybe 	 Not sure perhaps 	 H
+117	Please 	 A polite word to ask for something 	 V
+118	Thank 	 A word to show you are grateful 	 V
+119	Sorry 	 A word that says you made a mistake 	 V
+120	Help 	 To assist someone 	 H
+121	Love 	 Strong feeling of liking someone 	 V
+122	Like 	 To enjoy something 	 H
+123	Want 	 To wish for something 	 H
+124	Need 	 Something you must have to live 	 V
+125	Have 	 To own or hold something 	 H
+126	Can 	 To be able to do something 	 H
+127	Will 	 Something you plan to do 	 H
+128	Would 	 A polite way to ask or say 	 V
+129	Today 	 The current day 	 H
+130	Yesterday 	 The day before today 	 V
+131	Tomorrow 	 The day after today 	 V
+132	Morning 	 The early part of the day 	 V
+133	Afternoon 	 The middle of the day after lunch 	 V
+134	Evening 	 The part of the day after afternoon 	 V
+135	Night 	 The dark part of the day 	 V
+136	Day 	 The time when the sun is up 	 H
+137	Week 	 Seven days together 	 H
+138	Month 	 A longer time (about 30 days) 	 V
+139	Year 	 All twelve months together 	 V
+140	Time 	 How long something takes 	 H
+141	Clock 	 A thing that shows time 	 V
+142	Bell 	 A metal sound you hear in school 	 V
+143	Door 	 Something you open to enter a room 	 H
+144	Window 	 A glass part of a wall to see outside 	 V
+145	Wall 	 A solid part of a room 	 H
+146	Floor 	 The bottom of a room where you walk 	 V
+147	Roof 	 The top of a house 	 H
+148	House 	 A place where a family lives 	 V
+149	Home 	 A place where you feel safe 	 V
+150	Street 	 A road where cars drive 	 H
+151	Car 	 A vehicle with four wheels 	 H
+152	Bus 	 A big vehicle that carries many people 	 V
+153	Bike 	 A two‑wheel vehicle you pedal 	 V
+154	Road 	 A path for cars and bikes 	 H
+155	Park 	 A place with trees and grass 	 H
+156	Playground 	 A place where children play 	 V
+157	Slide 	 Something you slide down in the park 	 V
+158	Swing 	 Something you go back and forward in the park 	 V
+159	Sand 	 Tiny pieces of rock on the beach 	 V
+160	Beach 	 A place with sand and sea 	 V
+161	Summer 	 A hot season of the year 	 V
+162	Winter 	 A cold season of the year 	 V
+163	Spring 	 A season between winter and summer 	 V
+164	Fall 	 A season when leaves fall from trees 	 V
+165	Fog 	 Thick air that is hard to see through 	 V
+166	Wind 	 Air that moves around 	 H
+167	Leaf 	 A green part of a tree 	 H
+168	Flower 	 A colorful plant that grows 	 V
+169	Grass 	 Green plants on the ground 	 V
+170	Tree 	 A tall plant with leaves and branches 	 V
+171	River 	 A long stream of water 	 V
+172	Sea 	 A very big area of salt water 	 V
+173	Bed 	 A place where you sleep 	 H
+174	Room 	 A space inside a house or school 	 H
+175	Table 	 A flat surface with legs 	 H
+176	Lamp 	 A light in the room 	 V
+177	Shoe 	 Something you wear on your feet 	 H
+178	Sock 	 A soft cover for your feet 	 H
+179	Hat 	 Something you wear on your head 	 H
+180	Shirt 	 A piece of clothing for your top 	 H
+181	Dress 	 A long piece of clothing for girls 	 V
+182	Skirt 	 A piece of clothing for the waist 	 V
+183	Pants 	 A piece of clothing for your legs 	 H
+184	Coat 	 A warm piece of clothing for cold days 	 V
+185	Bag 	 A thing to carry your things 	 H
+186	Bell	A metal sound you hear in school	V
+187	Lamp	A light in the room	V
+188	Hat	Something you wear on your head	H
+189	Nest	A small home for birds	V
+190	Kite	A toy that flies in the wind	V
+191	Moon	A round object in the sky at night	V
+192	Sand	Tiny pieces of rock on the beach	V
+193	Star	A tiny light in the night sky	V
+194	Tree	A tall plant with leaves and branches	V
+195	Leaf	A green part of a tree	H
+196	Door	Something you open to enter a room	H
+197	Room	A space inside a house or school	H
+198	Wall	A solid part of a room	H
+199	Sky	The space above the earth	V
+200	Snow	White cold stuff that falls in winter	V

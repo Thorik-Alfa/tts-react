@@ -1,0 +1,802 @@
+[
+  {
+    "word": "APPLE",
+    "clue": "A red or green fruit"
+  },
+  {
+    "word": "BALL",
+    "clue": "A round toy you can throw and kick"
+  },
+  {
+    "word": "CAT",
+    "clue": "A small animal that says meow"
+  },
+  {
+    "word": "DOG",
+    "clue": "A friendly animal that barks"
+  },
+  {
+    "word": "FISH",
+    "clue": "An animal that lives in water"
+  },
+  {
+    "word": "BIRD",
+    "clue": "A creature that flies in the sky"
+  },
+  {
+    "word": "COW",
+    "clue": "A big farm animal that gives milk"
+  },
+  {
+    "word": "PIG",
+    "clue": "A pink farm animal that goes oink"
+  },
+  {
+    "word": "DUCK",
+    "clue": "A bird that swims in ponds"
+  },
+  {
+    "word": "SHIP",
+    "clue": "A big boat that sails on the sea"
+  },
+  {
+    "word": "JUMP",
+    "clue": "To push your body into the air"
+  },
+  {
+    "word": "RUN",
+    "clue": "To move very fast with your legs"
+  },
+  {
+    "word": "WALK",
+    "clue": "To move slowly with your feet"
+  },
+  {
+    "word": "SING",
+    "clue": "To make music with your voice"
+  },
+  {
+    "word": "DANCE",
+    "clue": "To move your body to music"
+  },
+  {
+    "word": "PLAY",
+    "clue": "To have fun with friends"
+  },
+  {
+    "word": "GAME",
+    "clue": "A fun activity to play"
+  },
+  {
+    "word": "BOOK",
+    "clue": "Something you read with pages"
+  },
+  {
+    "word": "DESK",
+    "clue": "A table where you sit and write"
+  },
+  {
+    "word": "CHAIR",
+    "clue": "A place to sit in the classroom"
+  },
+  {
+    "word": "PENCIL",
+    "clue": "Something you write with that you can sharpen"
+  },
+  {
+    "word": "PEN",
+    "clue": "A writing tool that uses ink"
+  },
+  {
+    "word": "PAPER",
+    "clue": "Something you draw or write on"
+  },
+  {
+    "word": "ERASER",
+    "clue": "A thing that removes pencil marks"
+  },
+  {
+    "word": "BAG",
+    "clue": "You put your books and things here"
+  },
+  {
+    "word": "SCHOOL",
+    "clue": "A place where you learn and read"
+  },
+  {
+    "word": "CLASS",
+    "clue": "A group of students with a teacher"
+  },
+  {
+    "word": "TEACHER",
+    "clue": "The person who helps you learn"
+  },
+  {
+    "word": "STUDENT",
+    "clue": "Someone who goes to school"
+  },
+  {
+    "word": "LEARN",
+    "clue": "To get new knowledge"
+  },
+  {
+    "word": "READ",
+    "clue": "To look at words and understand them"
+  },
+  {
+    "word": "WRITE",
+    "clue": "To make letters and words on paper"
+  },
+  {
+    "word": "DRAW",
+    "clue": "To make a picture with a pencil"
+  },
+  {
+    "word": "SING",
+    "clue": "To make music with your voice"
+  },
+  {
+    "word": "DANCE",
+    "clue": "To move your body to music"
+  },
+  {
+    "word": "JUMP",
+    "clue": "To push your body into the air"
+  },
+  {
+    "word": "RUN",
+    "clue": "To move very fast with your legs"
+  },
+  {
+    "word": "WALK",
+    "clue": "To move slowly with your feet"
+  },
+  {
+    "word": "STAND",
+    "clue": "To be on your feet"
+  },
+  {
+    "word": "SIT",
+    "clue": "To rest on a chair or the floor"
+  },
+  {
+    "word": "SLEEP",
+    "clue": "To close your eyes and rest at night"
+  },
+  {
+    "word": "WAKE",
+    "clue": "To stop sleeping and open your eyes"
+  },
+  {
+    "word": "EAT",
+    "clue": "To put food in your mouth"
+  },
+  {
+    "word": "DRINK",
+    "clue": "To put liquid in your mouth"
+  },
+  {
+    "word": "FOOD",
+    "clue": "Something you eat to feel full"
+  },
+  {
+    "word": "WATER",
+    "clue": "A clear liquid you drink"
+  },
+  {
+    "word": "MILK",
+    "clue": "A white drink from cows"
+  },
+  {
+    "word": "JUICE",
+    "clue": "A drink made from fruit"
+  },
+  {
+    "word": "RICE",
+    "clue": "White food that goes with many meals"
+  },
+  {
+    "word": "BREAD",
+    "clue": "A soft food made from flour"
+  },
+  {
+    "word": "CAKE",
+    "clue": "A sweet food for birthdays"
+  },
+  {
+    "word": "EGG",
+    "clue": "Something a chicken lays"
+  },
+  {
+    "word": "CHICKEN",
+    "clue": "A bird we eat for food"
+  },
+  {
+    "word": "FISH",
+    "clue": "A food that comes from the sea"
+  },
+  {
+    "word": "MEAT",
+    "clue": "Food that comes from animals"
+  },
+  {
+    "word": "SOUP",
+    "clue": "A hot liquid food with vegetables or meat"
+  },
+  {
+    "word": "SUN",
+    "clue": "A bright yellow ball in the sky"
+  },
+  {
+    "word": "MOON",
+    "clue": "A round object in the sky at night"
+  },
+  {
+    "word": "STAR",
+    "clue": "A tiny light in the night sky"
+  },
+  {
+    "word": "SKY",
+    "clue": "The space above the earth"
+  },
+  {
+    "word": "CLOUD",
+    "clue": "Something white in the sky"
+  },
+  {
+    "word": "RAIN",
+    "clue": "Water that falls from the sky"
+  },
+  {
+    "word": "SNOW",
+    "clue": "White cold stuff that falls in winter"
+  },
+  {
+    "word": "FIRE",
+    "clue": "Something very hot and bright"
+  },
+  {
+    "word": "HOT",
+    "clue": "Not cold feels like the sun"
+  },
+  {
+    "word": "COLD",
+    "clue": "Not warm feels like ice"
+  },
+  {
+    "word": "WARM",
+    "clue": "Not too hot, not too cold"
+  },
+  {
+    "word": "COOL",
+    "clue": "A little cold but not freezing"
+  },
+  {
+    "word": "BLACK",
+    "clue": "A dark color like night"
+  },
+  {
+    "word": "WHITE",
+    "clue": "A bright color like snow"
+  },
+  {
+    "word": "RED",
+    "clue": "The color of an apple"
+  },
+  {
+    "word": "BLUE",
+    "clue": "The color of the sky"
+  },
+  {
+    "word": "GREEN",
+    "clue": "The color of grass"
+  },
+  {
+    "word": "YELLOW",
+    "clue": "The color of the sun"
+  },
+  {
+    "word": "PURPLE",
+    "clue": "A mix of red and blue"
+  },
+  {
+    "word": "ORANGE",
+    "clue": "A mix of red and yellow"
+  },
+  {
+    "word": "PINK",
+    "clue": "A light color like a flower"
+  },
+  {
+    "word": "BROWN",
+    "clue": "The color of chocolate"
+  },
+  {
+    "word": "GRAY",
+    "clue": "A color between black and white"
+  },
+  {
+    "word": "BIG",
+    "clue": "Larger than something else"
+  },
+  {
+    "word": "SMALL",
+    "clue": "Not big very little"
+  },
+  {
+    "word": "TALL",
+    "clue": "Very high up"
+  },
+  {
+    "word": "SHORT",
+    "clue": "Not tall not long"
+  },
+  {
+    "word": "LONG",
+    "clue": "Taller in size from one end to the other"
+  },
+  {
+    "word": "LOW",
+    "clue": "Not high near the ground"
+  },
+  {
+    "word": "FAST",
+    "clue": "Very quick in movement"
+  },
+  {
+    "word": "SLOW",
+    "clue": "Not fast takes more time"
+  },
+  {
+    "word": "GOOD",
+    "clue": "Something nice or correct"
+  },
+  {
+    "word": "BAD",
+    "clue": "The opposite of good"
+  },
+  {
+    "word": "HAPPY",
+    "clue": "Feeling very joyful"
+  },
+  {
+    "word": "SAD",
+    "clue": "Feeling unhappy"
+  },
+  {
+    "word": "ANGRY",
+    "clue": "Feeling strong upset"
+  },
+  {
+    "word": "FUNNY",
+    "clue": "Something that makes you laugh"
+  },
+  {
+    "word": "SILLY",
+    "clue": "Not serious a little crazy"
+  },
+  {
+    "word": "SMART",
+    "clue": "Very clever or intelligent"
+  },
+  {
+    "word": "QUIET",
+    "clue": "Not loud very soft"
+  },
+  {
+    "word": "LOUD",
+    "clue": "Very noisy and strong"
+  },
+  {
+    "word": "LIGHT",
+    "clue": "Not heavy easy to lift"
+  },
+  {
+    "word": "HEAVY",
+    "clue": "Very hard to lift"
+  },
+  {
+    "word": "CLEAN",
+    "clue": "Not dirty fresh and tidy"
+  },
+  {
+    "word": "DIRTY",
+    "clue": "Not clean has dust or mud"
+  },
+  {
+    "word": "NEW",
+    "clue": "Something fresh that is not old"
+  },
+  {
+    "word": "OLD",
+    "clue": "Something from long ago"
+  },
+  {
+    "word": "BEGIN",
+    "clue": "To start something"
+  },
+  {
+    "word": "FINISH",
+    "clue": "To end something"
+  },
+  {
+    "word": "OPEN",
+    "clue": "To let something come out or in"
+  },
+  {
+    "word": "CLOSE",
+    "clue": "To stop something from opening"
+  },
+  {
+    "word": "PUSH",
+    "clue": "To move something away"
+  },
+  {
+    "word": "PULL",
+    "clue": "To bring something closer"
+  },
+  {
+    "word": "GO",
+    "clue": "To move from one place to another"
+  },
+  {
+    "word": "COME",
+    "clue": "To move toward someone or something"
+  },
+  {
+    "word": "STOP",
+    "clue": "To not move anymore"
+  },
+  {
+    "word": "START",
+    "clue": "To begin an action"
+  },
+  {
+    "word": "YES",
+    "clue": "A word that means agreement"
+  },
+  {
+    "word": "NO",
+    "clue": "A word that means disagreement"
+  },
+  {
+    "word": "MAYBE",
+    "clue": "Not sure perhaps"
+  },
+  {
+    "word": "PLEASE",
+    "clue": "A polite word to ask for something"
+  },
+  {
+    "word": "THANK",
+    "clue": "A word to show you are grateful"
+  },
+  {
+    "word": "SORRY",
+    "clue": "A word that says you made a mistake"
+  },
+  {
+    "word": "HELP",
+    "clue": "To assist someone"
+  },
+  {
+    "word": "LOVE",
+    "clue": "Strong feeling of liking someone"
+  },
+  {
+    "word": "LIKE",
+    "clue": "To enjoy something"
+  },
+  {
+    "word": "WANT",
+    "clue": "To wish for something"
+  },
+  {
+    "word": "NEED",
+    "clue": "Something you must have to live"
+  },
+  {
+    "word": "HAVE",
+    "clue": "To own or hold something"
+  },
+  {
+    "word": "CAN",
+    "clue": "To be able to do something"
+  },
+  {
+    "word": "WILL",
+    "clue": "Something you plan to do"
+  },
+  {
+    "word": "WOULD",
+    "clue": "A polite way to ask or say"
+  },
+  {
+    "word": "TODAY",
+    "clue": "The current day"
+  },
+  {
+    "word": "YESTERDAY",
+    "clue": "The day before today"
+  },
+  {
+    "word": "TOMORROW",
+    "clue": "The day after today"
+  },
+  {
+    "word": "MORNING",
+    "clue": "The early part of the day"
+  },
+  {
+    "word": "AFTERNOON",
+    "clue": "The middle of the day after lunch"
+  },
+  {
+    "word": "EVENING",
+    "clue": "The part of the day after afternoon"
+  },
+  {
+    "word": "NIGHT",
+    "clue": "The dark part of the day"
+  },
+  {
+    "word": "DAY",
+    "clue": "The time when the sun is up"
+  },
+  {
+    "word": "WEEK",
+    "clue": "Seven days together"
+  },
+  {
+    "word": "MONTH",
+    "clue": "A longer time (about 30 days)"
+  },
+  {
+    "word": "YEAR",
+    "clue": "All twelve months together"
+  },
+  {
+    "word": "TIME",
+    "clue": "How long something takes"
+  },
+  {
+    "word": "CLOCK",
+    "clue": "A thing that shows time"
+  },
+  {
+    "word": "BELL",
+    "clue": "A metal sound you hear in school"
+  },
+  {
+    "word": "DOOR",
+    "clue": "Something you open to enter a room"
+  },
+  {
+    "word": "WINDOW",
+    "clue": "A glass part of a wall to see outside"
+  },
+  {
+    "word": "WALL",
+    "clue": "A solid part of a room"
+  },
+  {
+    "word": "FLOOR",
+    "clue": "The bottom of a room where you walk"
+  },
+  {
+    "word": "ROOF",
+    "clue": "The top of a house"
+  },
+  {
+    "word": "HOUSE",
+    "clue": "A place where a family lives"
+  },
+  {
+    "word": "HOME",
+    "clue": "A place where you feel safe"
+  },
+  {
+    "word": "STREET",
+    "clue": "A road where cars drive"
+  },
+  {
+    "word": "CAR",
+    "clue": "A vehicle with four wheels"
+  },
+  {
+    "word": "BUS",
+    "clue": "A big vehicle that carries many people"
+  },
+  {
+    "word": "BIKE",
+    "clue": "A two\u2011wheel vehicle you pedal"
+  },
+  {
+    "word": "ROAD",
+    "clue": "A path for cars and bikes"
+  },
+  {
+    "word": "PARK",
+    "clue": "A place with trees and grass"
+  },
+  {
+    "word": "PLAYGROUND",
+    "clue": "A place where children play"
+  },
+  {
+    "word": "SLIDE",
+    "clue": "Something you slide down in the park"
+  },
+  {
+    "word": "SWING",
+    "clue": "Something you go back and forward in the park"
+  },
+  {
+    "word": "SAND",
+    "clue": "Tiny pieces of rock on the beach"
+  },
+  {
+    "word": "BEACH",
+    "clue": "A place with sand and sea"
+  },
+  {
+    "word": "SUMMER",
+    "clue": "A hot season of the year"
+  },
+  {
+    "word": "WINTER",
+    "clue": "A cold season of the year"
+  },
+  {
+    "word": "SPRING",
+    "clue": "A season between winter and summer"
+  },
+  {
+    "word": "FALL",
+    "clue": "A season when leaves fall from trees"
+  },
+  {
+    "word": "FOG",
+    "clue": "Thick air that is hard to see through"
+  },
+  {
+    "word": "WIND",
+    "clue": "Air that moves around"
+  },
+  {
+    "word": "LEAF",
+    "clue": "A green part of a tree"
+  },
+  {
+    "word": "FLOWER",
+    "clue": "A colorful plant that grows"
+  },
+  {
+    "word": "GRASS",
+    "clue": "Green plants on the ground"
+  },
+  {
+    "word": "TREE",
+    "clue": "A tall plant with leaves and branches"
+  },
+  {
+    "word": "RIVER",
+    "clue": "A long stream of water"
+  },
+  {
+    "word": "SEA",
+    "clue": "A very big area of salt water"
+  },
+  {
+    "word": "BED",
+    "clue": "A place where you sleep"
+  },
+  {
+    "word": "ROOM",
+    "clue": "A space inside a house or school"
+  },
+  {
+    "word": "TABLE",
+    "clue": "A flat surface with legs"
+  },
+  {
+    "word": "LAMP",
+    "clue": "A light in the room"
+  },
+  {
+    "word": "SHOE",
+    "clue": "Something you wear on your feet"
+  },
+  {
+    "word": "SOCK",
+    "clue": "A soft cover for your feet"
+  },
+  {
+    "word": "HAT",
+    "clue": "Something you wear on your head"
+  },
+  {
+    "word": "SHIRT",
+    "clue": "A piece of clothing for your top"
+  },
+  {
+    "word": "DRESS",
+    "clue": "A long piece of clothing for girls"
+  },
+  {
+    "word": "SKIRT",
+    "clue": "A piece of clothing for the waist"
+  },
+  {
+    "word": "PANTS",
+    "clue": "A piece of clothing for your legs"
+  },
+  {
+    "word": "COAT",
+    "clue": "A warm piece of clothing for cold days"
+  },
+  {
+    "word": "BAG",
+    "clue": "A thing to carry your things"
+  },
+  {
+    "word": "BELL",
+    "clue": "A metal sound you hear in school"
+  },
+  {
+    "word": "LAMP",
+    "clue": "A light in the room"
+  },
+  {
+    "word": "HAT",
+    "clue": "Something you wear on your head"
+  },
+  {
+    "word": "NEST",
+    "clue": "A small home for birds"
+  },
+  {
+    "word": "KITE",
+    "clue": "A toy that flies in the wind"
+  },
+  {
+    "word": "MOON",
+    "clue": "A round object in the sky at night"
+  },
+  {
+    "word": "SAND",
+    "clue": "Tiny pieces of rock on the beach"
+  },
+  {
+    "word": "STAR",
+    "clue": "A tiny light in the night sky"
+  },
+  {
+    "word": "TREE",
+    "clue": "A tall plant with leaves and branches"
+  },
+  {
+    "word": "LEAF",
+    "clue": "A green part of a tree"
+  },
+  {
+    "word": "DOOR",
+    "clue": "Something you open to enter a room"
+  },
+  {
+    "word": "ROOM",
+    "clue": "A space inside a house or school"
+  },
+  {
+    "word": "WALL",
+    "clue": "A solid part of a room"
+  },
+  {
+    "word": "SKY",
+    "clue": "The space above the earth"
+  },
+  {
+    "word": "SNOW",
+    "clue": "White cold stuff that falls in winter"
+  }
+]
