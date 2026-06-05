@@ -1025,9 +1025,11 @@ function App() {
               <button className="menu-btn" onClick={() => { fetchLeaderboard(); menuNavigate('leaderboard'); }}>
                 <Icon icon="solar:cup-first-bold-duotone" /> Papan Skor
               </button>
-              <button className="menu-btn" onClick={() => { fetchWords(); menuNavigate('admin'); }}>
-                <Icon icon="solar:shield-user-bold-duotone" /> Menu Admin
-              </button>
+              {new URLSearchParams(window.location.search).has('admin') && (
+                <button className="menu-btn" onClick={() => { fetchWords(); menuNavigate('admin'); }}>
+                  <Icon icon="solar:shield-user-bold-duotone" /> Menu Admin
+                </button>
+              )}
               <button
                 className="menu-btn"
                 onClick={() => { playSound('click'); setTheme(prev => prev === 'dark' ? 'light' : 'dark'); }}
