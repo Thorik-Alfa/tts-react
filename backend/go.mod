@@ -1,6 +1,6 @@
 module backend
 
-go 1.26
+go 1.21
 
 require github.com/glebarez/go-sqlite v1.22.0
 
