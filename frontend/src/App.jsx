@@ -1656,8 +1656,9 @@ function App() {
           className="toast-progress"
           style={{
             position: 'fixed',
-            bottom: '24px',
-            right: '24px',
+            top: '50%',
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
             background: 'var(--bg-secondary)',
             border: '2px solid var(--accent-purple)',
             borderRadius: '16px',
