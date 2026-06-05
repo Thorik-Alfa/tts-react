@@ -545,8 +545,6 @@ function App() {
           } else if (pct >= 25 && !milestones.p25) {
             showToast(`Keren! Progres 25% terlewati, jalanmu makin mulus! ✨`, "success");
             setMilestones(prev => ({ ...prev, p25: true }));
-          } else {
-            showToast("Hebat! Satu kata berhasil terpecahkan! 🎉", "success");
           }
         } else {
           playSound('error');
