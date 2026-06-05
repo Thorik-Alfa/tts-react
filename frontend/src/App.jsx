@@ -335,53 +335,46 @@ function App() {
     }
   };
 
-  // Get leaderboard records from localStorage
+  // Fetch leaderboard records from Go backend strictly
   const fetchLeaderboard = async () => {
     try {
       setLoading(true);
-      const stored = localStorage.getItem('tts_leaderboard');
-      let data = [];
-      if (stored) {
-        data = JSON.parse(stored);
-        // If it contains the old mock names, clear it so the user gets a fresh empty leaderboard
-        if (data.some(item => ['Gibral', 'Adit', 'Rian', 'Sarah', 'Kevin'].includes(item.name))) {
-          data = [];
-          localStorage.setItem('tts_leaderboard', JSON.stringify(data));
-        }
+      setError(null);
+      const res = await fetch('/api/leaderboard');
+      if (res.ok) {
+        const data = await res.json();
+        setLeaderboardData(data || []);
       } else {
-        data = [];
-        localStorage.setItem('tts_leaderboard', JSON.stringify(data));
+        throw new Error('Server sedang galat');
       }
-      setLeaderboardData(data);
-      setLoading(false);
     } catch (err) {
-      console.error('Failed to fetch leaderboard', err);
+      console.error('Failed to fetch leaderboard:', err);
+      setError('Server sedang galat');
+      setLeaderboardData([]);
+    } finally {
       setLoading(false);
     }
   };
 
-  // Fetch words list from Go backend with localStorage fallback
+  // Fetch words list from Go backend strictly
   const fetchWords = async () => {
     try {
+      setError(null);
       const res = await fetch('/api/words');
       if (res.ok) {
         const data = await res.json();
-        setDbWords(data);
-        localStorage.setItem('tts_custom_words', JSON.stringify(data));
+        setDbWords(data || []);
       } else {
-        throw new Error();
+        throw new Error('Server sedang galat');
       }
     } catch (err) {
-      const local = localStorage.getItem('tts_custom_words');
-      if (local) {
-        setDbWords(JSON.parse(local));
-      } else {
-        setDbWords([]);
-      }
+      console.error('Failed to fetch words:', err);
+      setError('Server sedang galat');
+      setDbWords([]);
     }
   };
 
-  // Submit a new word to database/localStorage in Admin Panel
+  // Submit a new word to database in Admin Panel strictly
   const handleAddWordSubmit = async (e) => {
     e.preventDefault();
     if (!newWord.trim() || !newClue.trim()) return;
@@ -408,24 +401,18 @@ function App() {
         setNewClue('');
         fetchWords();
       } else {
-        throw new Error();
+        throw new Error('Server sedang galat');
       }
     } catch (err) {
-      const local = localStorage.getItem('tts_custom_words');
-      let words = local ? JSON.parse(local) : [];
-      words = words.filter(w => w.word.toUpperCase() !== wordUpper);
-      words.push({ word: wordUpper, clue: newClue.trim() });
-      localStorage.setItem('tts_custom_words', JSON.stringify(words));
-      setDbWords(words);
-      setAdminSuccess(`Kata "${wordUpper}" berhasil ditambahkan secara lokal!`);
-      setNewWord('');
-      setNewClue('');
+      console.error(err);
+      setAdminError('Gagal menambahkan kata. Server sedang galat.');
+      setError('Server sedang galat');
     } finally {
       setActionLoading(false);
     }
   };
 
-  // Delete a word from database/localStorage in Admin Panel
+  // Delete a word from database in Admin Panel strictly
   const handleDeleteWord = async (wordToDelete) => {
     if (!window.confirm(`Hapus kata "${wordToDelete}"?`)) return;
     setActionLoading(true);
@@ -441,17 +428,12 @@ function App() {
         setAdminSuccess(`Kata "${wordToDelete}" berhasil dihapus!`);
         fetchWords();
       } else {
-        throw new Error();
+        throw new Error('Server sedang galat');
       }
     } catch (err) {
-      const local = localStorage.getItem('tts_custom_words');
-      if (local) {
-        let words = JSON.parse(local);
-        words = words.filter(w => w.word.toUpperCase() !== wordToDelete.toUpperCase());
-        localStorage.setItem('tts_custom_words', JSON.stringify(words));
-        setDbWords(words);
-        setAdminSuccess(`Kata "${wordToDelete}" berhasil dihapus secara lokal!`);
-      }
+      console.error(err);
+      setAdminError('Gagal menghapus kata. Server sedang galat.');
+      setError('Server sedang galat');
     } finally {
       setActionLoading(false);
     }
@@ -561,29 +543,12 @@ function App() {
     });
   };
 
-  // Auto-submit score to local and server leaderboard
+  // Auto-submit score to Go backend database strictly
   const autoSubmitScore = async (scoreVal, timeVal) => {
     if (!username.trim()) return;
     try {
-      // Local
-      const stored = localStorage.getItem('tts_leaderboard');
-      let data = stored ? JSON.parse(stored) : [];
-      const newEntry = {
-        name: username.trim(),
-        difficulty: difficulty,
-        score: scoreVal,
-        timeSpent: timeVal,
-        createdAt: new Date().toISOString().replace('T', ' ').substring(0, 19)
-      };
-      data.push(newEntry);
-      data.sort((a, b) => b.score - a.score || a.timeSpent - b.timeSpent);
-      data = data.slice(0, 10);
-      localStorage.setItem('tts_leaderboard', JSON.stringify(data));
-      setLeaderboardData(data);
-      setScoreSubmitted(true);
-
-      // Server
-      await fetch('/api/leaderboard', {
+      setError(null);
+      const res = await fetch('/api/leaderboard', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -593,47 +558,15 @@ function App() {
           timeSpent: timeVal
         })
       });
+      if (res.ok) {
+        setScoreSubmitted(true);
+        fetchLeaderboard();
+      } else {
+        throw new Error('Server sedang galat');
+      }
     } catch (err) {
       console.error('Failed to submit score:', err);
-    }
-  };
-
-  // Submit record to localStorage
-  const handleScoreSubmit = async (e) => {
-    e.preventDefault();
-    if (!username.trim() || submittingScore) return;
-
-    try {
-      setSubmittingScore(true);
-      playSound('click');
-
-      const stored = localStorage.getItem('tts_leaderboard');
-      let data = [];
-      if (stored) {
-        data = JSON.parse(stored);
-      }
-
-      const newEntry = {
-        name: username.trim(),
-        difficulty: difficulty,
-        score: finalScore,
-        timeSpent: timeSpent,
-        createdAt: new Date().toISOString().replace('T', ' ').substring(0, 19)
-      };
-
-      data.push(newEntry);
-      data.sort((a, b) => b.score - a.score || a.timeSpent - b.timeSpent);
-      data = data.slice(0, 10); // keep top 10
-
-      localStorage.setItem('tts_leaderboard', JSON.stringify(data));
-      setScoreSubmitted(true);
-      setLeaderboardData(data);
-      setShowSuccess(false);
-      setView('leaderboard');
-      setSubmittingScore(false);
-    } catch (err) {
-      console.error('Failed to submit score', err);
-      setSubmittingScore(false);
+      setError('Server sedang galat');
     }
   };
 
@@ -1042,6 +975,35 @@ function App() {
   const cellFontSize = gridSize >= 25 ? '0.75rem' : gridSize >= 20 ? '0.9rem' : gridSize >= 16 ? '1.05rem' : '1.25rem';
   const numberFontSize = gridSize >= 25 ? '0.45rem' : gridSize >= 20 ? '0.55rem' : '0.65rem';
   const inputPaddingTop = gridSize >= 25 ? '2px' : gridSize >= 20 ? '4px' : '6px';
+
+  if (error === 'Server sedang galat') {
+    return (
+      <div className="app-container">
+        <div className="menu-wrapper">
+          <div className="menu-card" style={{ borderColor: 'var(--color-error)' }}>
+            <div className="menu-logo" style={{ color: 'var(--color-error)' }}>
+              <Icon icon="solar:danger-bold-duotone" className="icon" style={{ fontSize: '3rem' }} />
+              <h2>Server Sedang Galat</h2>
+            </div>
+            <p style={{ textAlign: 'center', margin: '1rem 0', color: 'var(--text-muted)' }}>
+              Gagal menghubungkan ke server backend Go. Silakan periksa koneksi internet Anda atau pastikan server backend Anda sedang aktif.
+            </p>
+            <button
+              className="btn btn-primary"
+              onClick={async () => {
+                setError(null);
+                await fetchWords();
+                await fetchLeaderboard();
+              }}
+              style={{ width: '100%', justifyContent: 'center' }}
+            >
+              <Icon icon="solar:restart-bold" /> Hubungkan Kembali
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="app-container">
