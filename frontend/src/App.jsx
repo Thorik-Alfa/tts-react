@@ -151,6 +151,10 @@ function App() {
   const [adminSuccess, setAdminSuccess] = useState('');
   const [actionLoading, setActionLoading] = useState(false);
 
+  // Toast / Pop-up Progress Notification States
+  const [toast, setToast] = useState(null);
+  const toastTimeoutRef = useRef(null);
+
   // DOM Refs for cell inputs and lists
   const cellRefs = useRef({});
   const acrossClueRefs = useRef({});
@@ -497,6 +501,15 @@ function App() {
     return correctCount;
   };
 
+  // Show temporary toast notification for progress/motivation
+  const showToast = (message, type = 'info') => {
+    if (toastTimeoutRef.current) clearTimeout(toastTimeoutRef.current);
+    setToast({ message, type });
+    toastTimeoutRef.current = setTimeout(() => {
+      setToast(null);
+    }, 4000);
+  };
+
   // Check word correctness on input and give feedback immediately
   const checkWordOnInput = (row, col, currentGrid) => {
     if (!gridData) return;
@@ -516,6 +529,7 @@ function App() {
         });
         if (isCorrect) {
           playSound('correct');
+          showToast("Hebat! Satu kata berhasil terpecahkan! 🎉", "success");
         } else {
           playSound('error');
         }
@@ -897,6 +911,18 @@ function App() {
         playSound('error');
       }
     } else {
+      // Show progress toast
+      const pct = totalWords > 0 ? Math.round((correctWords / totalWords) * 100) : 0;
+      let motivational = "Ayo semangat, terus cari kata lainnya! 💪";
+      if (pct >= 75) {
+        motivational = "Sedikit lagi! Kamu luar biasa! 🌟";
+      } else if (pct >= 50) {
+        motivational = "Setengah jalan terlewati, mantap! 👍";
+      } else if (pct >= 25) {
+        motivational = "Usaha yang bagus! Lanjutkan perjuanganmu! ✨";
+      }
+      showToast(`Progres: ${correctWords} dari ${totalWords} kata benar (${correctWords * 5} Poin). ${motivational}`, "info");
+
       // Wrong answers: decrease health if Medium or Hard difficulty AND there is a filled wrong answer
       if (hasWrongAnswer && difficulty !== 'easy') {
         setHealth(prev => {
@@ -992,7 +1018,7 @@ function App() {
     if (!gridData) return false;
     const cells = getWordCells(clue.row, clue.col, dir);
     if (cells.length === 0) return false;
-    return cells.every(cell => userGrid[cell.row][cell.col] === gridData[cell.row][cell.col].letter);
+    return cells.every(cell => userGrid[cell.row]?.[cell.col] === gridData[cell.row]?.[cell.col]?.letter);
   };
 
   // Calculate dynamic grid dimensions for font, padding, and gaps
@@ -1642,6 +1668,40 @@ function App() {
               </button>
             </div>
           </div>
+        </div>
+      )}
+      {/* Toast Progress Pop-up */}
+      {toast && (
+        <div 
+          className="toast-progress"
+          style={{
+            position: 'fixed',
+            bottom: '24px',
+            right: '24px',
+            background: 'var(--bg-secondary)',
+            border: '2px solid var(--accent-purple)',
+            borderRadius: '16px',
+            padding: '1rem 1.5rem',
+            boxShadow: '0 10px 30px rgba(0,0,0,0.5)',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.75rem',
+            zIndex: 1000,
+            maxWidth: '380px',
+            animation: 'toastPop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)'
+          }}
+        >
+          <Icon 
+            icon={toast.type === 'success' ? 'solar:check-circle-bold-duotone' : 'solar:info-circle-bold-duotone'} 
+            style={{ 
+              fontSize: '1.5rem', 
+              color: toast.type === 'success' ? 'var(--color-success)' : 'var(--accent-teal-hover)',
+              flexShrink: 0
+            }} 
+          />
+          <span style={{ fontSize: '0.85rem', fontWeight: '600', color: 'var(--text-main)', lineHeight: '1.4' }}>
+            {toast.message}
+          </span>
         </div>
       )}
     </div>
