@@ -89,6 +89,8 @@ const playSound = (type) => {
   }
 };
 
+const API_BASE = import.meta.env.VITE_API_URL || '';
+
 function App() {
   // Navigation & Submenu Views
   // 'menu' | 'play' | 'leaderboard' | 'settings'
@@ -340,7 +342,7 @@ function App() {
     try {
       setLoading(true);
       setError(null);
-      const res = await fetch('/api/leaderboard');
+      const res = await fetch(`${API_BASE}/api/leaderboard`);
       if (res.ok) {
         const data = await res.json();
         setLeaderboardData(data || []);
@@ -360,7 +362,7 @@ function App() {
   const fetchWords = async () => {
     try {
       setError(null);
-      const res = await fetch('/api/words');
+      const res = await fetch(`${API_BASE}/api/words`);
       if (res.ok) {
         const data = await res.json();
         setDbWords(data || []);
@@ -389,7 +391,7 @@ function App() {
     }
 
     try {
-      const res = await fetch('/api/words', {
+      const res = await fetch(`${API_BASE}/api/words`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ word: wordUpper, clue: newClue.trim() })
@@ -420,7 +422,7 @@ function App() {
     setAdminSuccess('');
 
     try {
-      const res = await fetch(`/api/words?word=${wordToDelete}`, {
+      const res = await fetch(`${API_BASE}/api/words?word=${wordToDelete}`, {
         method: 'DELETE'
       });
 
@@ -548,7 +550,7 @@ function App() {
     if (!username.trim()) return;
     try {
       setError(null);
-      const res = await fetch('/api/leaderboard', {
+      const res = await fetch(`${API_BASE}/api/leaderboard`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
