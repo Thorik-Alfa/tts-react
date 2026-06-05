@@ -154,6 +154,7 @@ function App() {
   // Toast / Pop-up Progress Notification States
   const [toast, setToast] = useState(null);
   const toastTimeoutRef = useRef(null);
+  const [milestones, setMilestones] = useState({ p25: false, p50: false, p75: false });
 
   // DOM Refs for cell inputs and lists
   const cellRefs = useRef({});
@@ -248,6 +249,7 @@ function App() {
       setLettersRevealed(0);
       setWordsRevealed(0);
       setScoreSubmitted(false);
+      setMilestones({ p25: false, p50: false, p75: false });
 
       // Determine vocabulary count based on difficulty
       let targetCount = 15;
@@ -529,7 +531,23 @@ function App() {
         });
         if (isCorrect) {
           playSound('correct');
-          showToast("Hebat! Satu kata berhasil terpecahkan! 🎉", "success");
+          
+          const totalWords = clues.across.length + clues.down.length;
+          const correctWords = getCorrectWordsCount(currentGrid);
+          const pct = totalWords > 0 ? Math.round((correctWords / totalWords) * 100) : 0;
+          
+          if (pct >= 75 && !milestones.p75) {
+            showToast(`Luar biasa! Progres sudah ${pct}%, tinggal sedikit lagi! 🌟`, "success");
+            setMilestones(prev => ({ ...prev, p75: true }));
+          } else if (pct >= 50 && !milestones.p50) {
+            showToast(`Hebat! Kamu sudah menyelesaikan setengah jalan (${pct}%)! Mantap! 👍`, "success");
+            setMilestones(prev => ({ ...prev, p50: true }));
+          } else if (pct >= 25 && !milestones.p25) {
+            showToast(`Keren! Progres 25% terlewati, jalanmu makin mulus! ✨`, "success");
+            setMilestones(prev => ({ ...prev, p25: true }));
+          } else {
+            showToast("Hebat! Satu kata berhasil terpecahkan! 🎉", "success");
+          }
         } else {
           playSound('error');
         }
