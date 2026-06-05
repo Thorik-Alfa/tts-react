@@ -483,7 +483,7 @@ function App() {
     if (!gridData) return 0;
     let correctCount = 0;
     const allClues = [...clues.across, ...clues.down];
-    
+
     allClues.forEach(clue => {
       const { row, col, word, direction } = clue;
       let isWordCorrect = true;
@@ -499,7 +499,7 @@ function App() {
         correctCount++;
       }
     });
-    
+
     return correctCount;
   };
 
@@ -518,7 +518,7 @@ function App() {
     ['H', 'V'].forEach(dir => {
       const cells = getWordCells(row, col, dir);
       if (cells.length === 0) return;
-      
+
       const isFilled = cells.every(c => currentGrid[c.row]?.[c.col] !== '');
       if (isFilled) {
         const isCorrect = cells.every(c => currentGrid[c.row]?.[c.col] === gridData[c.row]?.[c.col].letter);
@@ -531,19 +531,19 @@ function App() {
         });
         if (isCorrect) {
           playSound('correct');
-          
+
           const totalWords = clues.across.length + clues.down.length;
           const correctWords = getCorrectWordsCount(currentGrid);
           const pct = totalWords > 0 ? Math.round((correctWords / totalWords) * 100) : 0;
-          
+
           if (pct >= 75 && !milestones.p75) {
-            showToast(`Luar biasa! Progres sudah ${pct}%, tinggal sedikit lagi! 🌟`, "success");
+            showToast(`Luar biasa! Tinggal dikit lagi! 🌟`, "success");
             setMilestones(prev => ({ ...prev, p75: true }));
           } else if (pct >= 50 && !milestones.p50) {
-            showToast(`Hebat! Kamu sudah menyelesaikan setengah jalan (${pct}%)! Mantap! 👍`, "success");
+            showToast(`Hebat! Kamu sudah menyelesaikan setengah jalan! Mantap! 👍`, "success");
             setMilestones(prev => ({ ...prev, p50: true }));
           } else if (pct >= 25 && !milestones.p25) {
-            showToast(`Keren! Progres 25% terlewati, jalanmu makin mulus! ✨`, "success");
+            showToast(`Langkah awal yang bagus! Seperempat jalan terlewati, teruskan! ✨`, "success");
             setMilestones(prev => ({ ...prev, p25: true }));
           }
         } else {
@@ -1154,9 +1154,9 @@ function App() {
           </div>
 
           <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem', width: '100%' }}>
-            <button 
-              className="btn btn-primary" 
-              onClick={fetchNewPuzzle} 
+            <button
+              className="btn btn-primary"
+              onClick={fetchNewPuzzle}
               style={{ flex: 1, justifyContent: 'center' }}
               disabled={!username.trim()}
             >
@@ -1284,7 +1284,7 @@ function App() {
           <h3 style={{ fontSize: '1rem', fontWeight: '700', color: 'var(--accent-purple)' }}>
             Database Kata ({dbWords.length} kata)
           </h3>
-          
+
           <div style={{ maxHeight: '250px', overflowY: 'auto', border: '1px solid var(--glass-border)', borderRadius: '12px', padding: '0.5rem' }}>
             {dbWords.length === 0 ? (
               <p style={{ textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.85rem', padding: '1rem' }}>
@@ -1580,7 +1580,7 @@ function App() {
         const totalWords = clues.across.length + clues.down.length;
         const correctWords = getCorrectWordsCount();
         const pct = totalWords > 0 ? Math.round((correctWords / totalWords) * 100) : 0;
-        
+
         let motivationalMessage = "";
         let winTitle = "Permainan Selesai!";
         let iconName = "solar:star-bold-duotone";
@@ -1688,7 +1688,7 @@ function App() {
       )}
       {/* Toast Progress Pop-up */}
       {toast && (
-        <div 
+        <div
           className="toast-progress"
           style={{
             position: 'fixed',
@@ -1707,13 +1707,13 @@ function App() {
             animation: 'toastPop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)'
           }}
         >
-          <Icon 
-            icon={toast.type === 'success' ? 'solar:check-circle-bold-duotone' : 'solar:info-circle-bold-duotone'} 
-            style={{ 
-              fontSize: '1.5rem', 
+          <Icon
+            icon={toast.type === 'success' ? 'solar:check-circle-bold-duotone' : 'solar:info-circle-bold-duotone'}
+            style={{
+              fontSize: '1.5rem',
               color: toast.type === 'success' ? 'var(--color-success)' : 'var(--accent-teal-hover)',
               flexShrink: 0
-            }} 
+            }}
           />
           <span style={{ fontSize: '0.85rem', fontWeight: '600', color: 'var(--text-main)', lineHeight: '1.4' }}>
             {toast.message}
