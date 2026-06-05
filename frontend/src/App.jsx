@@ -152,6 +152,8 @@ function App() {
   const [adminError, setAdminError] = useState('');
   const [adminSuccess, setAdminSuccess] = useState('');
   const [actionLoading, setActionLoading] = useState(false);
+  const [adminPassword, setAdminPassword] = useState('');
+  const [adminLoginError, setAdminLoginError] = useState('');
 
   // Toast / Pop-up Progress Notification States
   const [toast, setToast] = useState(null);
@@ -1026,7 +1028,7 @@ function App() {
                 <Icon icon="solar:cup-first-bold-duotone" /> Papan Skor
               </button>
               {new URLSearchParams(window.location.search).has('admin') && (
-                <button className="menu-btn" onClick={() => { fetchWords(); menuNavigate('admin'); }}>
+                <button className="menu-btn" onClick={() => { setAdminPassword(''); setAdminLoginError(''); menuNavigate('admin-login'); }}>
                   <Icon icon="solar:shield-user-bold-duotone" /> Menu Admin
                 </button>
               )}
@@ -1187,6 +1189,69 @@ function App() {
           <button className="btn btn-primary" onClick={() => menuNavigate('menu')} style={{ marginTop: '1rem' }}>
             Kembali ke Menu
           </button>
+        </div>
+      )}
+
+      {/* VIEW ADMIN LOGIN */}
+      {view === 'admin-login' && (
+        <div className="settings-card" style={{ maxWidth: '400px' }}>
+          <div className="card-header">
+            <Icon icon="solar:lock-keyhole-bold-duotone" style={{ fontSize: '1.8rem', color: 'var(--accent-purple)' }} />
+            <h2>Login Admin</h2>
+          </div>
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              playSound('click');
+              if (adminPassword === 'admin123') {
+                setAdminPassword('');
+                setAdminLoginError('');
+                fetchWords();
+                setView('admin');
+              } else {
+                playSound('error');
+                setAdminLoginError('Password salah!');
+              }
+            }}
+            style={{ display: 'flex', flexDirection: 'column', gap: '1rem', width: '100%', marginTop: '1rem' }}
+          >
+            <div className="settings-group">
+              <label>Password Admin</label>
+              <input
+                type="password"
+                placeholder="Masukkan password..."
+                value={adminPassword}
+                onChange={(e) => setAdminPassword(e.target.value)}
+                style={{
+                  width: '100%',
+                  padding: '0.75rem 1rem',
+                  borderRadius: '12px',
+                  border: '1px solid var(--glass-border)',
+                  background: 'var(--glass-bg)',
+                  color: 'var(--text-main)',
+                  fontSize: '1rem',
+                  outline: 'none',
+                  textAlign: 'center',
+                  fontWeight: '600'
+                }}
+                autoFocus
+                required
+              />
+              {adminLoginError && (
+                <span style={{ fontSize: '0.85rem', color: 'var(--color-error)', textAlign: 'center', marginTop: '0.5rem', display: 'block' }}>
+                  {adminLoginError}
+                </span>
+              )}
+            </div>
+            <div style={{ display: 'flex', gap: '1rem', width: '100%', marginTop: '0.5rem' }}>
+              <button type="submit" className="btn btn-primary" style={{ flex: 1, justifyContent: 'center' }}>
+                Masuk
+              </button>
+              <button type="button" className="btn btn-secondary" onClick={() => menuNavigate('menu')} style={{ flex: 1, justifyContent: 'center' }}>
+                Batal
+              </button>
+            </div>
+          </form>
         </div>
       )}
 
