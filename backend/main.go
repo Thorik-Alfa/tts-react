@@ -4,7 +4,9 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
+	"os"
 	"strconv"
+	"strings"
 )
 
 func enableCors(w http.ResponseWriter) {
@@ -99,6 +101,71 @@ func handleLeaderboard(w http.ResponseWriter, r *http.Request) {
 	http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 }
 
+func handleWords(w http.ResponseWriter, r *http.Request) {
+	enableCors(w)
+	if r.Method == "OPTIONS" {
+		w.WriteHeader(http.StatusOK)
+		return
+	}
+
+	if r.Method == "GET" {
+		entries, err := GetAllWords()
+		if err != nil {
+			log.Printf("Error getting words: %v\n", err)
+			http.Error(w, "Failed to get words", http.StatusInternalServerError)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(entries)
+		return
+	}
+
+	if r.Method == "POST" {
+		var req WordEntry
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			http.Error(w, "Invalid request body", http.StatusBadRequest)
+			return
+		}
+
+		if req.Word == "" || req.Clue == "" {
+			http.Error(w, "Word and clue are required", http.StatusBadRequest)
+			return
+		}
+
+		err := AddWord(req.Word, req.Clue)
+		if err != nil {
+			log.Printf("Error adding word: %v\n", err)
+			http.Error(w, "Failed to add word", http.StatusInternalServerError)
+			return
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(map[string]string{"status": "success"})
+		return
+	}
+
+	if r.Method == "DELETE" {
+		word := r.URL.Query().Get("word")
+		if word == "" {
+			http.Error(w, "Word parameter is required", http.StatusBadRequest)
+			return
+		}
+
+		err := DeleteWord(word)
+		if err != nil {
+			log.Printf("Error deleting word: %v\n", err)
+			http.Error(w, "Failed to delete word", http.StatusInternalServerError)
+			return
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(map[string]string{"status": "success"})
+		return
+	}
+
+	http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+}
+
 func main() {
 	log.Println("Initializing database...")
 	if err := InitDB(); err != nil {
@@ -107,10 +174,18 @@ func main() {
 
 	http.HandleFunc("/api/generate", handleGenerate)
 	http.HandleFunc("/api/leaderboard", handleLeaderboard)
+	http.HandleFunc("/api/words", handleWords)
 
-	port := ":8080"
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8080"
+	}
+	if !strings.HasPrefix(port, ":") {
+		port = ":" + port
+	}
 	log.Printf("Server starting on port %s...\n", port)
 	if err := http.ListenAndServe(port, nil); err != nil {
 		log.Fatalf("Server failed: %v\n", err)
 	}
 }
+

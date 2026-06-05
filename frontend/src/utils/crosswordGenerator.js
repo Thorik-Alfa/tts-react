@@ -3,8 +3,9 @@ import dataset from '../data/dataset.json';
 /**
  * Returns a list of random entries from dataset.
  */
-function getRandomWords(count) {
-  const shuffled = [...dataset].sort(() => 0.5 - Math.random());
+function getRandomWords(count, customWordList = null) {
+  const source = customWordList && customWordList.length > 0 ? customWordList : dataset;
+  const shuffled = [...source].sort(() => 0.5 - Math.random());
   return shuffled.slice(0, count);
 }
 
@@ -22,7 +23,7 @@ function getGridSize(minWords) {
 /**
  * Main function to generate a crossword puzzle.
  */
-export function generateCrossword(minWords) {
+export function generateCrossword(minWords, customWordList = null) {
   const gridSize = getGridSize(minWords);
 
   let poolSize = minWords + 25;
@@ -35,8 +36,9 @@ export function generateCrossword(minWords) {
   const attempts = minWords >= 30 ? 50 : 30;
 
   for (let attempt = 0; attempt < attempts; attempt++) {
-    const candidates = getRandomWords(poolSize);
+    const candidates = getRandomWords(poolSize, customWordList);
     const puzzle = tryGenerate(candidates, gridSize, minWords);
+    if (!puzzle) continue;
     const placedCount = puzzle.clues.across.length + puzzle.clues.down.length;
 
     if (placedCount === minWords) {

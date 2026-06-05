@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Icon } from '@iconify/react';
 import './App.css';
 import { generateCrossword } from './utils/crosswordGenerator';
+import dataset from './data/dataset.json';
 
 // Synthesized Sound Effects using Web Audio API
 const playSound = (type) => {
@@ -140,6 +141,16 @@ function App() {
   // Theme (dark / light)
   const [theme, setTheme] = useState('light');
 
+  // Custom DB Words
+  const [dbWords, setDbWords] = useState([]);
+
+  // Admin View States
+  const [newWord, setNewWord] = useState('');
+  const [newClue, setNewClue] = useState('');
+  const [adminError, setAdminError] = useState('');
+  const [adminSuccess, setAdminSuccess] = useState('');
+  const [actionLoading, setActionLoading] = useState(false);
+
   // DOM Refs for cell inputs and lists
   const cellRefs = useRef({});
   const acrossClueRefs = useRef({});
@@ -233,7 +244,6 @@ function App() {
       setLettersRevealed(0);
       setWordsRevealed(0);
       setScoreSubmitted(false);
-      setUsername('');
 
       // Determine vocabulary count based on difficulty
       let targetCount = 15;
@@ -263,7 +273,7 @@ function App() {
       }
 
       // Generate crossword puzzle locally using imported module
-      const data = generateCrossword(targetCount);
+      const data = generateCrossword(targetCount, dbWords);
       if (!data) {
         throw new Error('Gagal menghasilkan teka-teki silang secara lokal.');
       }
@@ -341,6 +351,220 @@ function App() {
     } catch (err) {
       console.error('Failed to fetch leaderboard', err);
       setLoading(false);
+    }
+  };
+
+  // Fetch words list from Go backend with localStorage fallback
+  const fetchWords = async () => {
+    try {
+      const res = await fetch('/api/words');
+      if (res.ok) {
+        const data = await res.json();
+        setDbWords(data);
+        localStorage.setItem('tts_custom_words', JSON.stringify(data));
+      } else {
+        throw new Error();
+      }
+    } catch (err) {
+      const local = localStorage.getItem('tts_custom_words');
+      if (local) {
+        setDbWords(JSON.parse(local));
+      } else {
+        setDbWords([]);
+      }
+    }
+  };
+
+  // Submit a new word to database/localStorage in Admin Panel
+  const handleAddWordSubmit = async (e) => {
+    e.preventDefault();
+    if (!newWord.trim() || !newClue.trim()) return;
+    setActionLoading(true);
+    setAdminError('');
+    setAdminSuccess('');
+    const wordUpper = newWord.trim().toUpperCase().replace(/[^A-Z]/g, '');
+    if (!wordUpper) {
+      setAdminError('Kata hanya boleh berisi huruf A-Z.');
+      setActionLoading(false);
+      return;
+    }
+
+    try {
+      const res = await fetch('/api/words', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ word: wordUpper, clue: newClue.trim() })
+      });
+
+      if (res.ok) {
+        setAdminSuccess(`Kata "${wordUpper}" berhasil ditambahkan!`);
+        setNewWord('');
+        setNewClue('');
+        fetchWords();
+      } else {
+        throw new Error();
+      }
+    } catch (err) {
+      const local = localStorage.getItem('tts_custom_words');
+      let words = local ? JSON.parse(local) : [];
+      words = words.filter(w => w.word.toUpperCase() !== wordUpper);
+      words.push({ word: wordUpper, clue: newClue.trim() });
+      localStorage.setItem('tts_custom_words', JSON.stringify(words));
+      setDbWords(words);
+      setAdminSuccess(`Kata "${wordUpper}" berhasil ditambahkan secara lokal!`);
+      setNewWord('');
+      setNewClue('');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  // Delete a word from database/localStorage in Admin Panel
+  const handleDeleteWord = async (wordToDelete) => {
+    if (!window.confirm(`Hapus kata "${wordToDelete}"?`)) return;
+    setActionLoading(true);
+    setAdminError('');
+    setAdminSuccess('');
+
+    try {
+      const res = await fetch(`/api/words?word=${wordToDelete}`, {
+        method: 'DELETE'
+      });
+
+      if (res.ok) {
+        setAdminSuccess(`Kata "${wordToDelete}" berhasil dihapus!`);
+        fetchWords();
+      } else {
+        throw new Error();
+      }
+    } catch (err) {
+      const local = localStorage.getItem('tts_custom_words');
+      if (local) {
+        let words = JSON.parse(local);
+        words = words.filter(w => w.word.toUpperCase() !== wordToDelete.toUpperCase());
+        localStorage.setItem('tts_custom_words', JSON.stringify(words));
+        setDbWords(words);
+        setAdminSuccess(`Kata "${wordToDelete}" berhasil dihapus secara lokal!`);
+      }
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  // Mount effect to load initial data
+  useEffect(() => {
+    fetchWords();
+    fetchLeaderboard();
+  }, []);
+
+  // Check if the board is completely filled
+  const isBoardFilled = (currentGrid) => {
+    if (!gridData) return false;
+    for (let r = 0; r < gridSize; r++) {
+      for (let c = 0; c < gridSize; c++) {
+        if (gridData[r] && !gridData[r][c].isEmpty) {
+          if (!currentGrid[r] || currentGrid[r][c] === '') {
+            return false;
+          }
+        }
+      }
+    }
+    return true;
+  };
+
+  // Calculate correctly solved words (across + down)
+  const getCorrectWordsCount = (currentGrid = userGrid) => {
+    if (!gridData) return 0;
+    let correctCount = 0;
+    const allClues = [...clues.across, ...clues.down];
+    
+    allClues.forEach(clue => {
+      const { row, col, word, direction } = clue;
+      let isWordCorrect = true;
+      for (let i = 0; i < word.length; i++) {
+        const r = direction === 'H' ? row : row + i;
+        const c = direction === 'H' ? col + i : col;
+        if (!currentGrid[r] || currentGrid[r][c] !== gridData[r][c].letter) {
+          isWordCorrect = false;
+          break;
+        }
+      }
+      if (isWordCorrect) {
+        correctCount++;
+      }
+    });
+    
+    return correctCount;
+  };
+
+  // Check word correctness on input and give feedback immediately
+  const checkWordOnInput = (row, col, currentGrid) => {
+    if (!gridData) return;
+    ['H', 'V'].forEach(dir => {
+      const cells = getWordCells(row, col, dir);
+      if (cells.length === 0) return;
+      
+      const isFilled = cells.every(c => currentGrid[c.row]?.[c.col] !== '');
+      if (isFilled) {
+        const isCorrect = cells.every(c => currentGrid[c.row]?.[c.col] === gridData[c.row]?.[c.col].letter);
+        setFeedbackGrid(prev => {
+          const next = [...prev.map(r => [...r])];
+          cells.forEach(c => {
+            next[c.row][c.col] = isCorrect ? 'correct' : 'error';
+          });
+          return next;
+        });
+        if (isCorrect) {
+          playSound('correct');
+        } else {
+          playSound('error');
+        }
+      } else {
+        setFeedbackGrid(prev => {
+          const next = [...prev.map(r => [...r])];
+          cells.forEach(c => {
+            next[c.row][c.col] = null;
+          });
+          return next;
+        });
+      }
+    });
+  };
+
+  // Auto-submit score to local and server leaderboard
+  const autoSubmitScore = async (scoreVal, timeVal) => {
+    if (!username.trim()) return;
+    try {
+      // Local
+      const stored = localStorage.getItem('tts_leaderboard');
+      let data = stored ? JSON.parse(stored) : [];
+      const newEntry = {
+        name: username.trim(),
+        difficulty: difficulty,
+        score: scoreVal,
+        timeSpent: timeVal,
+        createdAt: new Date().toISOString().replace('T', ' ').substring(0, 19)
+      };
+      data.push(newEntry);
+      data.sort((a, b) => b.score - a.score || a.timeSpent - b.timeSpent);
+      data = data.slice(0, 10);
+      localStorage.setItem('tts_leaderboard', JSON.stringify(data));
+      setLeaderboardData(data);
+      setScoreSubmitted(true);
+
+      // Server
+      await fetch('/api/leaderboard', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: username.trim(),
+          difficulty: difficulty,
+          score: scoreVal,
+          timeSpent: timeVal
+        })
+      });
+    } catch (err) {
+      console.error('Failed to submit score:', err);
     }
   };
 
@@ -503,6 +727,7 @@ function App() {
         if (!isCurrentLocked) {
           newGrid[row][col] = '';
           setUserGrid(newGrid);
+          checkWordOnInput(row, col, newGrid);
         } else {
           // If locked, just move focus to previous cell without deleting
           const prev = getPrevCellInWord(row, col, selectedDirection);
@@ -519,6 +744,7 @@ function App() {
           if (!isPrevLocked) {
             newGrid[prev.row][prev.col] = '';
             setUserGrid(newGrid);
+            checkWordOnInput(prev.row, prev.col, newGrid);
           }
           setSelectedCell({ row: prev.row, col: prev.col });
           const refKey = `${prev.row}-${prev.col}`;
@@ -546,6 +772,14 @@ function App() {
     if (isChecked) {
       setIsChecked(false);
       setFeedbackGrid(Array(gridSize).fill(null).map(() => Array(gridSize).fill(null)));
+    }
+
+    // Check if the current word is fully filled and check correctness
+    checkWordOnInput(row, col, newGrid);
+
+    // If the entire board is filled, automatically trigger checkAnswers
+    if (isBoardFilled(newGrid)) {
+      checkAnswers(newGrid);
     }
 
     if (value !== '') {
@@ -603,7 +837,7 @@ function App() {
   };
 
   // Check answers & decrease health if wrong
-  const checkAnswers = () => {
+  const checkAnswers = (gridToCheck = userGrid) => {
     if (!gridData) return;
     playSound('click');
 
@@ -614,7 +848,7 @@ function App() {
     for (let r = 0; r < gridSize; r++) {
       for (let c = 0; c < gridSize; c++) {
         if (!gridData[r][c].isEmpty) {
-          const userVal = userGrid[r][c];
+          const userVal = gridToCheck[r][c];
           const correctVal = gridData[r][c].letter;
 
           if (userVal === '') {
@@ -634,8 +868,15 @@ function App() {
     setFeedbackGrid(newFeedback);
     setIsChecked(true);
 
-    if (allCorrect) {
-      // Calculate final score
+    const totalWords = clues.across.length + clues.down.length;
+    const correctWords = getCorrectWordsCount(gridToCheck);
+    const isFilled = isBoardFilled(gridToCheck);
+
+    if (allCorrect || isFilled) {
+      // Calculate final score: 5 points per correct word
+      const score = correctWords * 5;
+      setFinalScore(score);
+
       let duration = 0;
       if (timerMode === 'free') {
         duration = timerSeconds;
@@ -645,24 +886,16 @@ function App() {
       }
       setTimeSpent(duration);
 
-      // Score calculation
-      const base = wordCount * 100;
-      let timeBonus = 0;
-      if (timerMode !== 'free') {
-        timeBonus = timerSeconds * 2;
-      } else {
-        timeBonus = Math.max(0, 3000 - duration);
-      }
-
-      const penalty = (lettersRevealed * 50) + (wordsRevealed * 100);
-      const mult = difficulty === 'easy' ? 1.0 : difficulty === 'medium' ? 1.5 : 2.0;
-
-      const score = Math.max(0, Math.round((base + timeBonus) * mult - penalty));
-      setFinalScore(score);
+      // Auto submit score
+      autoSubmitScore(score, duration);
 
       setTimerActive(false);
       setShowSuccess(true);
-      playSound('victory');
+      if (allCorrect) {
+        playSound('victory');
+      } else {
+        playSound('error');
+      }
     } else {
       // Wrong answers: decrease health if Medium or Hard difficulty AND there is a filled wrong answer
       if (hasWrongAnswer && difficulty !== 'easy') {
@@ -776,7 +1009,7 @@ function App() {
           <div className="menu-card">
             <div className="menu-logo">
               <Icon icon="solar:puzzle-bold-duotone" className="icon" />
-              <h2>TTS Bahasa Inggris</h2>
+              <h2>ZapWords ScB App</h2>
             </div>
 
             <div className="menu-options">
@@ -785,6 +1018,9 @@ function App() {
               </button>
               <button className="menu-btn" onClick={() => { fetchLeaderboard(); menuNavigate('leaderboard'); }}>
                 <Icon icon="solar:cup-first-bold-duotone" /> Papan Skor
+              </button>
+              <button className="menu-btn" onClick={() => { fetchWords(); menuNavigate('admin'); }}>
+                <Icon icon="solar:shield-user-bold-duotone" /> Menu Admin
               </button>
               <button
                 className="menu-btn"
@@ -805,7 +1041,34 @@ function App() {
             <h2>Pengaturan Game</h2>
           </div>
 
-          {/* Vocabulary count is now tied directly to difficulty level */}
+          {/* Player Name Input */}
+          <div className="settings-group">
+            <label>Nama Pemain</label>
+            <input
+              type="text"
+              placeholder="Masukkan nama Anda..."
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              maxLength={15}
+              style={{
+                width: '100%',
+                padding: '0.75rem 1rem',
+                borderRadius: '12px',
+                border: '1px solid var(--glass-border)',
+                background: 'var(--glass-bg)',
+                color: 'var(--text-main)',
+                fontSize: '1rem',
+                outline: 'none',
+                textAlign: 'center',
+                fontWeight: '600'
+              }}
+            />
+            {username.trim() === '' && (
+              <span style={{ fontSize: '0.75rem', color: 'var(--color-error)', textAlign: 'center', marginTop: '0.25rem' }}>
+                *Nama wajib diisi sebelum bermain
+              </span>
+            )}
+          </div>
 
           {/* Timer Countdowns */}
           <div className="settings-group">
@@ -849,7 +1112,12 @@ function App() {
           </div>
 
           <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem', width: '100%' }}>
-            <button className="btn btn-primary" onClick={fetchNewPuzzle} style={{ flex: 1, justifyContent: 'center' }}>
+            <button 
+              className="btn btn-primary" 
+              onClick={fetchNewPuzzle} 
+              style={{ flex: 1, justifyContent: 'center' }}
+              disabled={!username.trim()}
+            >
               <Icon icon="solar:play-circle-bold" /> Mulai Bermain
             </button>
             <button className="btn btn-secondary" onClick={() => menuNavigate('menu')} style={{ flex: 1, justifyContent: 'center' }}>
@@ -914,6 +1182,116 @@ function App() {
         </div>
       )}
 
+      {/* VIEW ADMIN PANEL */}
+      {view === 'admin' && (
+        <div className="settings-card" style={{ maxWidth: '650px' }}>
+          <div className="card-header">
+            <Icon icon="solar:shield-user-bold-duotone" style={{ fontSize: '1.8rem', color: 'var(--accent-purple)' }} />
+            <h2>Menu Admin - Kelola Kata</h2>
+          </div>
+
+          {/* Form Tambah Kata */}
+          <form onSubmit={handleAddWordSubmit} className="admin-form" style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+            <h3 style={{ fontSize: '1rem', fontWeight: '700', color: 'var(--accent-teal)' }}>Tambah Kata Baru</h3>
+            <div style={{ display: 'flex', gap: '0.5rem', width: '100%' }}>
+              <input
+                type="text"
+                placeholder="KATA (A-Z)"
+                value={newWord}
+                onChange={(e) => setNewWord(e.target.value)}
+                style={{
+                  flex: '1',
+                  padding: '0.6rem 0.8rem',
+                  borderRadius: '10px',
+                  border: '1px solid var(--glass-border)',
+                  background: 'var(--glass-bg)',
+                  color: 'var(--text-main)',
+                  fontSize: '0.85rem',
+                  fontWeight: '600'
+                }}
+                required
+              />
+              <input
+                type="text"
+                placeholder="Petunjuk / Clue"
+                value={newClue}
+                onChange={(e) => setNewClue(e.target.value)}
+                style={{
+                  flex: '2',
+                  padding: '0.6rem 0.8rem',
+                  borderRadius: '10px',
+                  border: '1px solid var(--glass-border)',
+                  background: 'var(--glass-bg)',
+                  color: 'var(--text-main)',
+                  fontSize: '0.85rem',
+                  fontWeight: '600'
+                }}
+                required
+              />
+              <button type="submit" className="btn btn-primary" style={{ padding: '0.6rem 1rem' }} disabled={actionLoading}>
+                Tambah
+              </button>
+            </div>
+            {adminError && <p style={{ color: 'var(--color-error)', fontSize: '0.8rem', textAlign: 'center' }}>{adminError}</p>}
+            {adminSuccess && <p style={{ color: 'var(--color-success)', fontSize: '0.8rem', textAlign: 'center' }}>{adminSuccess}</p>}
+          </form>
+
+          <hr style={{ borderColor: 'var(--glass-border)', margin: '0.5rem 0' }} />
+
+          {/* Daftar Kata */}
+          <h3 style={{ fontSize: '1rem', fontWeight: '700', color: 'var(--accent-purple)' }}>
+            Database Kata ({dbWords.length} kata)
+          </h3>
+          
+          <div style={{ maxHeight: '250px', overflowY: 'auto', border: '1px solid var(--glass-border)', borderRadius: '12px', padding: '0.5rem' }}>
+            {dbWords.length === 0 ? (
+              <p style={{ textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.85rem', padding: '1rem' }}>
+                Belum ada kata tambahan di database.
+              </p>
+            ) : (
+              <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.85rem' }}>
+                <thead>
+                  <tr style={{ borderBottom: '1px solid var(--glass-border)' }}>
+                    <th style={{ padding: '0.5rem', color: 'var(--accent-teal)' }}>Kata</th>
+                    <th style={{ padding: '0.5rem', color: 'var(--accent-teal)' }}>Petunjuk</th>
+                    <th style={{ padding: '0.5rem', color: 'var(--accent-teal)', textAlign: 'right' }}>Aksi</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {dbWords.map((item, idx) => (
+                    <tr key={`word-${idx}`} style={{ borderBottom: '1px solid var(--glass-border)' }}>
+                      <td style={{ padding: '0.5rem', fontWeight: '700', textTransform: 'uppercase' }}>{item.word}</td>
+                      <td style={{ padding: '0.5rem', color: 'var(--text-muted)' }}>{item.clue}</td>
+                      <td style={{ padding: '0.5rem', textAlign: 'right' }}>
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteWord(item.word)}
+                          disabled={actionLoading}
+                          style={{
+                            background: 'transparent',
+                            border: 'none',
+                            color: 'var(--color-error)',
+                            cursor: 'pointer',
+                            display: 'inline-flex',
+                            alignItems: 'center'
+                          }}
+                        >
+                          <Icon icon="solar:trash-bin-trash-bold" />
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </div>
+
+          <button className="btn btn-secondary" onClick={() => menuNavigate('menu')} style={{ alignSelf: 'center' }}>
+            Kembali ke Menu Utama
+          </button>
+        </div>
+      )}
+
       {/* 4. VIEW GAME PLAY */}
       {view === 'play' && gridData && (
         <>
@@ -921,7 +1299,7 @@ function App() {
           <header className="header">
             <div className="logo-section">
               <h1 onClick={exitGame} style={{ cursor: 'pointer' }}>
-                <Icon icon="solar:puzzle-bold-duotone" /> TTS Bahasa Inggris
+                <Icon icon="solar:puzzle-bold-duotone" /> ZapWords ScB App
               </h1>
             </div>
             <div className="stats-section">
@@ -948,6 +1326,20 @@ function App() {
 
           {/* Game HUD (Nyawa, Hint, dsb) */}
           <div className="hud-container">
+            <div className="hud-item">
+              <span>Pemain: </span>
+              <span className="hint-badge" style={{ background: 'rgba(139, 92, 246, 0.15)', color: 'var(--accent-purple-hover)' }}>
+                {username}
+              </span>
+            </div>
+
+            <div className="hud-item">
+              <span>Progress Nilai: </span>
+              <span className="hint-badge" style={{ background: 'rgba(6, 182, 212, 0.15)', color: 'var(--accent-teal-hover)', borderColor: 'rgba(6, 182, 212, 0.25)', fontWeight: 'bold' }}>
+                {getCorrectWordsCount() * 5} of {(clues.across.length + clues.down.length) * 5} ({clues.across.length + clues.down.length > 0 ? Math.round((getCorrectWordsCount() / (clues.across.length + clues.down.length)) * 100) : 0}%)
+              </span>
+            </div>
+
             <div className="hud-item">
               <span>Nyawa: </span>
               {difficulty === 'easy' ? (
@@ -1141,57 +1533,88 @@ function App() {
           </section>
         </>
       )}
-
       {/* 5. OVERLAY MODAL: WINNING SUCCESS */}
-      {showSuccess && (
-        <div className="modal-overlay">
-          <div className="modal-content">
-            <div className="modal-icon" style={{ color: '#eab308' }}>
-              <Icon icon="solar:cup-first-bold-duotone" style={{ fontSize: '4.5rem' }} />
-            </div>
-            <h2>Selamat, Anda Menang!</h2>
-            <p>Berhasil menyelesaikan papan TTS dengan tepat.</p>
+      {showSuccess && (() => {
+        const totalWords = clues.across.length + clues.down.length;
+        const correctWords = getCorrectWordsCount();
+        const pct = totalWords > 0 ? Math.round((correctWords / totalWords) * 100) : 0;
+        
+        let motivationalMessage = "";
+        let winTitle = "Permainan Selesai!";
+        let iconName = "solar:star-bold-duotone";
+        let iconColor = "#06b6d4";
 
-            <div className="modal-stats">
-              <div className="modal-stat-card">
-                <div className="stat-label">Skor Akhir</div>
-                <div className="stat-value" style={{ color: 'var(--accent-purple-hover)', fontSize: '1.4rem' }}>
-                  {finalScore} Pts
+        if (pct === 100) {
+          winTitle = "Selamat, Sempurna!";
+          motivationalMessage = "Luar biasa! Kamu berhasil melahap semua kata dengan sempurna! 🏆";
+          iconName = "solar:cup-first-bold-duotone";
+          iconColor = "#eab308";
+        } else if (pct >= 75) {
+          motivationalMessage = "Keren banget! Sedikit lagi menuju sempurna. Pertahankan prestasimu! 💪";
+        } else if (pct >= 50) {
+          motivationalMessage = "Kerja bagus! Usaha yang hebat, kamu sudah menguasai sebagian besar kata! 👍";
+        } else if (pct >= 25) {
+          motivationalMessage = "Tetap semangat! Setiap kesalahan adalah langkah menuju pintar. Coba lagi yuk! ✨";
+        } else {
+          motivationalMessage = "Jangan menyerah! Awal yang baik untuk belajar. Mari coba lagi dan taklukkan kata-kata ini! 🔥";
+          iconName = "solar:heart-broken-bold";
+          iconColor = "#ef4444";
+        }
+
+        return (
+          <div className="modal-overlay">
+            <div className={`modal-content ${pct === 100 ? 'perfect-victory-modal' : ''}`}>
+              {pct === 100 && (
+                <div className="confetti-container">
+                  <div className="confetti-piece"></div>
+                  <div className="confetti-piece"></div>
+                  <div className="confetti-piece"></div>
+                  <div className="confetti-piece"></div>
+                  <div className="confetti-piece"></div>
+                  <div className="confetti-piece"></div>
+                  <div className="confetti-piece"></div>
+                  <div className="confetti-piece"></div>
+                </div>
+              )}
+              <div className="modal-icon" style={{ color: iconColor }}>
+                <Icon icon={iconName} className={pct === 100 ? 'animate-bounce' : ''} style={{ fontSize: '4.5rem' }} />
+              </div>
+              <h2>{winTitle}</h2>
+              <p style={{ fontWeight: '700', fontSize: '1.05rem', color: 'var(--text-main)', margin: '0.5rem 0' }}>
+                "{motivationalMessage}"
+              </p>
+
+              <div className="modal-stats">
+                <div className="modal-stat-card">
+                  <div className="stat-label">Progress Nilai</div>
+                  <div className="stat-value" style={{ color: 'var(--accent-teal-hover)', fontSize: '1.2rem' }}>
+                    {correctWords * 5} / {totalWords * 5} Pts
+                  </div>
+                </div>
+                <div className="modal-stat-card">
+                  <div className="stat-label">Persentase</div>
+                  <div className="stat-value" style={{ color: 'var(--accent-purple-hover)', fontSize: '1.2rem' }}>
+                    {pct}%
+                  </div>
+                </div>
+                <div className="modal-stat-card" style={{ gridColumn: 'span 2' }}>
+                  <div className="stat-label">Waktu Tempuh</div>
+                  <div className="stat-value" style={{ fontSize: '1.2rem' }}>{formatTime(timeSpent)}</div>
                 </div>
               </div>
-              <div className="modal-stat-card">
-                <div className="stat-label">Waktu Tempuh</div>
-                <div className="stat-value">{formatTime(timeSpent)}</div>
+
+              <div style={{ marginTop: '1rem', width: '100%' }}>
+                <p style={{ color: 'var(--color-success)', fontWeight: '700', fontSize: '0.9rem', marginBottom: '1rem' }}>
+                  Skor untuk <strong style={{ color: 'var(--accent-purple-hover)' }}>{username}</strong> berhasil dicatat otomatis! 🏆
+                </p>
+                <button className="btn btn-primary" onClick={exitGame} style={{ width: '100%', justifyContent: 'center' }}>
+                  Kembali ke Menu Utama
+                </button>
               </div>
             </div>
-
-            {/* Score submission to Postgres Leaderboard */}
-            {!scoreSubmitted ? (
-              <form onSubmit={handleScoreSubmit} className="score-submit-form">
-                <input
-                  type="text"
-                  placeholder="Ketik nama Anda..."
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                  maxLength={15}
-                  required
-                />
-                <button type="submit" className="btn btn-primary" disabled={submittingScore}>
-                  {submittingScore ? 'Mengirim...' : 'Kirim Skor 🏆'}
-                </button>
-              </form>
-            ) : (
-              <p style={{ color: 'var(--color-success)', fontWeight: '700', fontSize: '0.9rem' }}>
-                Skor Anda berhasil dicatat!
-              </p>
-            )}
-
-            <button className="btn btn-secondary" onClick={exitGame} style={{ width: '100%' }}>
-              Kembali ke Menu Utama
-            </button>
           </div>
-        </div>
-      )}
+        );
+      })()}
 
       {/* 6. OVERLAY MODAL: GAME OVER */}
       {gameOver && (

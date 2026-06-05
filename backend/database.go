@@ -31,7 +31,10 @@ var db *sql.DB
 // InitDB initializes the PostgreSQL database, seeds it from dataset.txt if empty, and sets up leaderboard.
 func InitDB() error {
 	var err error
-	connStr := "postgres://postgres:secret@localhost:5432/postgres?sslmode=disable"
+	connStr := os.Getenv("DATABASE_URL")
+	if connStr == "" {
+		connStr = "postgres://postgres:secret@localhost:5432/postgres?sslmode=disable"
+	}
 	db, err = sql.Open("postgres", connStr)
 	if err != nil {
 		return fmt.Errorf("failed to open database: %w", err)
@@ -216,3 +219,41 @@ func SubmitScore(name, difficulty string, score, timeSpent int) error {
 	_, err := db.Exec("INSERT INTO leaderboard (name, difficulty, score, time_spent) VALUES ($1, $2, $3, $4)", name, difficulty, score, timeSpent)
 	return err
 }
+
+// GetAllWords fetches all words from the words table
+func GetAllWords() ([]WordEntry, error) {
+	rows, err := db.Query("SELECT word, clue FROM words ORDER BY id DESC")
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var entries []WordEntry
+	for rows.Next() {
+		var entry WordEntry
+		if err := rows.Scan(&entry.Word, &entry.Clue); err != nil {
+			return nil, err
+		}
+		entries = append(entries, entry)
+	}
+	return entries, nil
+}
+
+// AddWord inserts a word into database (capitalized word)
+func AddWord(word, clue string) error {
+	wordUpper := strings.ToUpper(strings.TrimSpace(word))
+	wordClean := cleanWord(wordUpper)
+	if wordClean == "" {
+		return fmt.Errorf("invalid word")
+	}
+	_, err := db.Exec("INSERT INTO words (word, clue) VALUES ($1, $2) ON CONFLICT (word) DO UPDATE SET clue = EXCLUDED.clue", wordClean, clue)
+	return err
+}
+
+// DeleteWord deletes a word from the database
+func DeleteWord(word string) error {
+	wordClean := cleanWord(strings.ToUpper(strings.TrimSpace(word)))
+	_, err := db.Exec("DELETE FROM words WHERE word = $1", wordClean)
+	return err
+}
+
