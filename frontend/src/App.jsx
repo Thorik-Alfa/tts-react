@@ -122,6 +122,9 @@ function App() {
   const [gameOver, setGameOver] = useState(false);
   const [feedbackGrid, setFeedbackGrid] = useState([]);
   const [health, setHealth] = useState(null); // easy = null, medium = 5, hard = 3
+  const [hasGivenUp, setHasGivenUp] = useState(false);
+  const [showGiveUpConfirm, setShowGiveUpConfirm] = useState(false);
+  const [savedGameToRestore, setSavedGameToRestore] = useState(null);
 
   // Hint limit counters
   const [lettersRevealed, setLettersRevealed] = useState(0);
@@ -250,6 +253,8 @@ function App() {
       setSelectedCell(null);
       setActiveWordCells([]);
       setActiveClue(null);
+      setHasGivenUp(false);
+      setShowGiveUpConfirm(false);
       setLettersRevealed(0);
       setWordsRevealed(0);
       setScoreSubmitted(false);
@@ -441,7 +446,75 @@ function App() {
   useEffect(() => {
     fetchWords();
     fetchLeaderboard();
+
+    // Check for saved game session
+    const saved = localStorage.getItem('tts_game_state');
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (parsed && parsed.gridData) {
+          setSavedGameToRestore(parsed);
+        }
+      } catch (e) {
+        console.error("Failed to parse saved game:", e);
+      }
+    }
   }, []);
+
+  // Save game state automatically whenever relevant states change
+  useEffect(() => {
+    if (view === 'play' && gridData) {
+      const state = {
+        gridData,
+        userGrid,
+        lockedCells,
+        username,
+        difficulty,
+        wordCount,
+        timerMode,
+        timerSeconds,
+        hasGivenUp,
+        lettersRevealed,
+        wordsRevealed,
+        milestones,
+        clues,
+        gridSize
+      };
+      localStorage.setItem('tts_game_state', JSON.stringify(state));
+    }
+  }, [view, gridData, userGrid, lockedCells, username, difficulty, wordCount, timerMode, timerSeconds, hasGivenUp, lettersRevealed, wordsRevealed, milestones, clues, gridSize]);
+
+  // Restore game state
+  const restoreSavedGame = () => {
+    if (!savedGameToRestore) return;
+    const data = savedGameToRestore;
+    setGridData(data.gridData);
+    setUserGrid(data.userGrid);
+    setLockedCells(data.lockedCells);
+    setUsername(data.username);
+    setDifficulty(data.difficulty);
+    setWordCount(data.wordCount);
+    setTimerMode(data.timerMode);
+    setTimerSeconds(data.timerSeconds);
+    setHasGivenUp(data.hasGivenUp);
+    setLettersRevealed(data.lettersRevealed);
+    setWordsRevealed(data.wordsRevealed);
+    setMilestones(data.milestones);
+    setClues(data.clues);
+    setGridSize(data.gridSize);
+
+    setView('play');
+    setTimerActive(true);
+    setSavedGameToRestore(null);
+    playSound('click');
+  };
+
+  // Discard saved game session
+  const discardSavedGame = () => {
+    localStorage.removeItem('tts_game_state');
+    setSavedGameToRestore(null);
+    playSound('click');
+  };
 
   // Check if the board is completely filled
   const isBoardFilled = (currentGrid) => {
@@ -852,6 +925,7 @@ function App() {
 
       setTimerActive(false);
       setShowSuccess(true);
+      localStorage.removeItem('tts_game_state');
       if (allCorrect) {
         playSound('victory');
       } else {
@@ -936,6 +1010,36 @@ function App() {
     setFeedbackGrid(Array(gridSize).fill(null).map(() => Array(gridSize).fill(null)));
   };
 
+  // Give up: open custom confirmation modal
+  const handleGiveUp = () => {
+    if (!gridData) return;
+    playSound('click');
+    setShowGiveUpConfirm(true);
+  };
+
+  // Reveal all answers (available after giving up)
+  const revealAllAnswers = () => {
+    if (!gridData) return;
+    playSound('click');
+
+    const newGrid = Array(gridSize).fill(null).map(() => Array(gridSize).fill(''));
+    const newFeedback = Array(gridSize).fill(null).map(() => Array(gridSize).fill(null));
+
+    for (let r = 0; r < gridSize; r++) {
+      for (let c = 0; c < gridSize; c++) {
+        if (!gridData[r][c].isEmpty) {
+          newGrid[r][c] = gridData[r][c].letter;
+          newFeedback[r][c] = 'correct'; // Show correct feedback for all revealed cells
+        }
+      }
+    }
+
+    setUserGrid(newGrid);
+    setFeedbackGrid(newFeedback);
+    setIsChecked(true);
+    showToast("Semua jawaban telah terbuka.", "info");
+  };
+
   // Exit from current game back to main menu
   const exitGame = () => {
     playSound('click');
@@ -944,6 +1048,9 @@ function App() {
     setSelectedCell(null);
     setShowSuccess(false);
     setGameOver(false);
+    setHasGivenUp(false);
+    setShowGiveUpConfirm(false);
+    localStorage.removeItem('tts_game_state');
     setView('menu');
   };
 
@@ -991,6 +1098,37 @@ function App() {
 
   return (
     <div className="app-container">
+      {/* 0. OVERLAY MODAL: RESTORE SAVED GAME */}
+      {savedGameToRestore && (
+        <div className="modal-overlay">
+          <div className="modal-content animate-slide-in" style={{ maxWidth: '420px' }}>
+            <div className="modal-icon" style={{ color: 'var(--accent-purple)' }}>
+              <Icon icon="solar:history-bold-duotone" style={{ fontSize: '4.5rem' }} />
+            </div>
+            <h2>Lanjutkan Permainan?</h2>
+            <p style={{ margin: '10px 0', color: 'var(--text-muted)', lineHeight: '1.5' }}>
+              Kami menemukan sesi permainan sebelumnya milik <strong>{savedGameToRestore.username}</strong> yang belum selesai ({savedGameToRestore.difficulty.toUpperCase()} mode).
+            </p>
+            <div style={{ display: 'flex', gap: '1rem', width: '100%', marginTop: '1rem' }}>
+              <button
+                className="btn btn-primary"
+                style={{ flex: 1, justifyContent: 'center' }}
+                onClick={restoreSavedGame}
+              >
+                Lanjutkan
+              </button>
+              <button
+                className="btn btn-secondary"
+                style={{ flex: 1, justifyContent: 'center' }}
+                onClick={discardSavedGame}
+              >
+                Mulai Baru
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* 1. VIEW MAIN MENU */}
       {view === 'menu' && (
         <div className="menu-wrapper">
@@ -1371,9 +1509,6 @@ function App() {
                 <Icon icon={timerActive ? 'solar:clock-circle-bold-duotone' : 'solar:pause-circle-bold-duotone'} />
                 <span>{formatTime(timerSeconds)}</span>
               </div>
-              <button className="btn btn-secondary" onClick={exitGame}>
-                <Icon icon="solar:logout-bold" /> Keluar
-              </button>
             </div>
           </header>
 
@@ -1437,9 +1572,37 @@ function App() {
                     <Icon icon="solar:book-2-bold" /> Buka Kata
                   </button>
                 )}
-                <button className="btn btn-secondary" onClick={resetGrid} disabled={!timerActive}>
+                <button className="btn btn-secondary" onClick={resetGrid} disabled={!timerActive || hasGivenUp}>
                   <Icon icon="solar:eraser-bold" /> Reset Papan
                 </button>
+                {!hasGivenUp ? (
+                  <button
+                    className="btn btn-secondary"
+                    style={{ borderColor: 'var(--color-error)', color: 'var(--color-error)' }}
+                    onClick={handleGiveUp}
+                    disabled={!timerActive}
+                    title="Menyerah"
+                  >
+                    <Icon icon="solar:danger-bold" /> Menyerah
+                  </button>
+                ) : (
+                  <>
+                    <button
+                      className="btn btn-accent"
+                      onClick={revealAllAnswers}
+                      title="Buka semua jawaban"
+                    >
+                      <Icon icon="solar:eye-bold" /> Buka Jawaban
+                    </button>
+                    <button
+                      className="btn btn-secondary"
+                      onClick={exitGame}
+                      title="Keluar ke menu utama"
+                    >
+                      <Icon icon="solar:logout-bold" /> Keluar
+                    </button>
+                  </>
+                )}
               </div>
 
               {/* Banner Petunjuk Terpilih */}
@@ -1575,6 +1738,46 @@ function App() {
           </section>
         </>
       )}
+      {/* 4.5 OVERLAY MODAL: CONFIRM GIVE UP */}
+      {showGiveUpConfirm && (
+        <div className="modal-overlay">
+          <div className="modal-content animate-slide-in" style={{ maxWidth: '400px' }}>
+            <div className="modal-icon" style={{ color: 'var(--color-error)' }}>
+              <Icon icon="solar:danger-bold-duotone" style={{ fontSize: '4.5rem' }} />
+            </div>
+            <h2>Konfirmasi Menyerah</h2>
+            <p style={{ margin: '10px 0', color: 'var(--text-muted)', lineHeight: '1.5' }}>
+              Apakah Anda yakin ingin menyerah? Waktu pengerjaan akan dihentikan dan Anda bisa membuka seluruh jawaban.
+            </p>
+            <div style={{ display: 'flex', gap: '1rem', width: '100%', marginTop: '1rem' }}>
+              <button
+                className="btn btn-primary"
+                style={{ background: 'var(--color-error)', color: '#fff', flex: 1, justifyContent: 'center', boxShadow: 'none' }}
+                onClick={() => {
+                  setShowGiveUpConfirm(false);
+                  playSound('click');
+                  setTimerActive(false);
+                  setHasGivenUp(true);
+                  showToast("Anda telah menyerah. Tombol 'Buka Jawaban' sekarang tersedia di sidebar.", "info");
+                }}
+              >
+                Ya, Menyerah
+              </button>
+              <button
+                className="btn btn-secondary"
+                style={{ flex: 1, justifyContent: 'center' }}
+                onClick={() => {
+                  playSound('click');
+                  setShowGiveUpConfirm(false);
+                }}
+              >
+                Batal
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* 5. OVERLAY MODAL: WINNING SUCCESS */}
       {showSuccess && (() => {
         const totalWords = clues.across.length + clues.down.length;
