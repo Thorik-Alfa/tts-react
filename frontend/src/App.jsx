@@ -264,14 +264,8 @@ function App() {
       }
       setWordCount(targetCount);
 
-      // Setup initial health bar based on difficulty
-      if (difficulty === 'easy') {
-        setHealth(null); // Infinite
-      } else if (difficulty === 'medium') {
-        setHealth(5);
-      } else if (difficulty === 'hard') {
-        setHealth(3);
-      }
+      // Setup initial health bar based on difficulty - Disabled for now
+      setHealth(null); // Infinite
 
       // Setup initial timer seconds
       if (timerMode === '10') {
@@ -876,22 +870,8 @@ function App() {
       }
       showToast(`Progres: ${correctWords} dari ${totalWords} kata benar (${correctWords * 5} Poin). ${motivational}`, "info");
 
-      // Wrong answers: decrease health if Medium or Hard difficulty AND there is a filled wrong answer
-      if (hasWrongAnswer && difficulty !== 'easy') {
-        setHealth(prev => {
-          const nextHealth = prev - 1;
-          if (nextHealth <= 0) {
-            setTimerActive(false);
-            setGameOver(true);
-            playSound('gameover');
-            return 0;
-          }
-          playSound('error');
-          return nextHealth;
-        });
-      } else {
-        playSound('error');
-      }
+      // Wrong answers: decrease health - Disabled for now
+      playSound('error');
     }
   };
 
@@ -1105,9 +1085,9 @@ function App() {
             <label>Tingkat Kesulitan</label>
             <div className="settings-options">
               {[
-                { label: 'Easy (5 Buka Huruf, 1 Buka Kata, Darah ∞)', val: 'easy' },
-                { label: 'Medium (3 Buka Huruf, Darah 5)', val: 'medium' },
-                { label: 'Hard (1 Buka Huruf, Darah 3)', val: 'hard' }
+                { label: 'Easy (5 Buka Huruf, 1 Buka Kata)', val: 'easy' },
+                { label: 'Medium (3 Buka Huruf)', val: 'medium' },
+                { label: 'Hard (1 Buka Huruf)', val: 'hard' }
               ].map(opt => (
                 <button
                   key={`diff-${opt.val}`}
@@ -1397,202 +1377,191 @@ function App() {
             </div>
           </header>
 
-          {/* Game HUD (Nyawa, Hint, dsb) */}
-          <div className="hud-container">
-            <div className="hud-item">
-              <span>Pemain: </span>
-              <span className="hint-badge" style={{ background: 'rgba(139, 92, 246, 0.15)', color: 'var(--accent-purple-hover)' }}>
-                {username}
-              </span>
-            </div>
-
-            <div className="hud-item">
-              <span>Progress Nilai: </span>
-              <span className="hint-badge" style={{ background: 'rgba(6, 182, 212, 0.15)', color: 'var(--accent-teal-hover)', borderColor: 'rgba(6, 182, 212, 0.25)', fontWeight: 'bold' }}>
-                {getCorrectWordsCount() * 5} of {(clues.across.length + clues.down.length) * 5} ({clues.across.length + clues.down.length > 0 ? Math.round((getCorrectWordsCount() / (clues.across.length + clues.down.length)) * 100) : 0}%)
-              </span>
-            </div>
-
-            <div className="hud-item">
-              <span>Nyawa: </span>
-              {difficulty === 'easy' ? (
-                <div className="health-bar" style={{ color: 'var(--accent-teal)' }}>
-                  <Icon icon="solar:infinity-bold" />
+          <div className="game-wrapper-desktop">
+            <aside className="game-sidebar-left">
+              {/* Game HUD (Nyawa, Hint, dsb) */}
+              <div className="hud-container">
+                <div className="hud-item">
+                  <span>Pemain: </span>
+                  <span className="hint-badge" style={{ background: 'rgba(139, 92, 246, 0.15)', color: 'var(--accent-purple-hover)' }}>
+                    {username}
+                  </span>
                 </div>
-              ) : (
-                <div className="health-bar">
-                  {Array(difficulty === 'medium' ? 5 : 3).fill(null).map((_, idx) => (
-                    <Icon
-                      key={`heart-${idx}`}
-                      icon={idx < health ? 'solar:heart-bold' : 'solar:heart-broken-bold'}
-                      style={{ color: idx < health ? 'var(--color-error)' : 'var(--text-muted)' }}
-                    />
-                  ))}
+
+                <div className="hud-item">
+                  <span>Progress Nilai: </span>
+                  <span className="hint-badge" style={{ background: 'rgba(6, 182, 212, 0.15)', color: 'var(--accent-teal-hover)', borderColor: 'rgba(6, 182, 212, 0.25)', fontWeight: 'bold' }}>
+                    {getCorrectWordsCount() * 5} of {(clues.across.length + clues.down.length) * 5} ({clues.across.length + clues.down.length > 0 ? Math.round((getCorrectWordsCount() / (clues.across.length + clues.down.length)) * 100) : 0}%)
+                  </span>
                 </div>
-              )}
-            </div>
 
-            <div className="hud-item">
-              <span>Hint Huruf: </span>
-              <span className="hint-badge">
-                {lettersRevealed} / {difficulty === 'easy' ? 5 : difficulty === 'medium' ? 3 : 1}
-              </span>
-            </div>
+                {/* Health / Nyawa - Disabled for now */}
 
-            {difficulty === 'easy' && (
-              <div className="hud-item">
-                <span>Hint Kata: </span>
-                <span className="hint-badge">
-                  {wordsRevealed} / 1
-                </span>
-              </div>
-            )}
-          </div>
+                <div className="hud-item">
+                  <span>Hint Huruf: </span>
+                  <span className="hint-badge">
+                    {lettersRevealed} / {difficulty === 'easy' ? 5 : difficulty === 'medium' ? 3 : 1}
+                  </span>
+                </div>
 
-          {/* Toolbar game actions */}
-          <div className="controls-bar">
-            <button className="btn btn-accent" onClick={checkAnswers} disabled={!timerActive}>
-              <Icon icon="solar:check-circle-bold" /> Cek Jawaban
-            </button>
-            <button
-              className="btn btn-secondary"
-              onClick={revealLetter}
-              disabled={!selectedCell || !timerActive || lettersRevealed >= (difficulty === 'easy' ? 5 : difficulty === 'medium' ? 3 : 1)}
-              title="Buka huruf terpilh"
-            >
-              <Icon icon="solar:eye-bold" /> Buka Huruf
-            </button>
-            {difficulty === 'easy' && (
-              <button
-                className="btn btn-secondary"
-                onClick={revealWord}
-                disabled={activeWordCells.length === 0 || !timerActive || wordsRevealed >= 1}
-                title="Buka seluruh kata"
-              >
-                <Icon icon="solar:book-2-bold" /> Buka Kata
-              </button>
-            )}
-            <button className="btn btn-secondary" onClick={resetGrid} disabled={!timerActive}>
-              <Icon icon="solar:eraser-bold" /> Reset Papan
-            </button>
-          </div>
-
-          {/* Banner Petunjuk Terpilih */}
-          {activeClue && (
-            <div className="active-clue-banner animate-slide-in">
-              <span className={`banner-badge ${selectedDirection === 'H' ? 'across' : 'down'}`}>
-                {selectedDirection === 'H' ? 'Mendatar' : 'Menurun'}
-              </span>
-              <span className="banner-num">{activeClue.number}</span>
-              <span className="banner-text">{activeClue.clue}</span>
-            </div>
-          )}
-
-          {/* Grid Papan TTS */}
-          <div className="game-layout">
-            <div className="board-container">
-              <div
-                className="crossword-grid"
-                style={{ gridTemplateColumns: `repeat(${gridSize}, 1fr)`, gap: gridGap }}
-              >
-                {gridData.map((row, rIdx) =>
-                  row.map((cell, cIdx) => {
-                    const isPlayable = !cell.isEmpty;
-                    const isLocked = lockedCells.some(lc => lc.row === rIdx && lc.col === cIdx);
-                    const isActiveCell = selectedCell && selectedCell.row === rIdx && selectedCell.col === cIdx;
-                    const isActiveWord = activeWordCells.some(c => c.row === rIdx && c.col === cIdx);
-
-                    if (!isPlayable) {
-                      return <div key={`cell-${rIdx}-${cIdx}`} className="grid-cell cell-empty" />;
-                    }
-
-                    let cellHighlightClass = 'cell-input';
-                    if (isLocked) {
-                      cellHighlightClass += ' cell-locked';
-                    } else if (isActiveCell) {
-                      cellHighlightClass += selectedDirection === 'H' ? ' cell-active-cell' : ' cell-active-cell-teal';
-                    } else if (isActiveWord) {
-                      cellHighlightClass += selectedDirection === 'H' ? ' cell-active-word' : ' cell-active-word-teal';
-                    }
-
-                    if (isChecked && feedbackGrid[rIdx] && feedbackGrid[rIdx][cIdx]) {
-                      const feedback = feedbackGrid[rIdx][cIdx];
-                      if (feedback === 'correct') cellHighlightClass += ' cell-correct';
-                      if (feedback === 'error') cellHighlightClass += ' cell-error';
-                    }
-
-                    return (
-                      <div
-                        key={`cell-${rIdx}-${cIdx}`}
-                        className={`grid-cell ${cellHighlightClass}`}
-                        onClick={() => handleCellClick(rIdx, cIdx)}
-                      >
-                        {cell.number > 0 && <span className="cell-number" style={{ fontSize: numberFontSize }}>{cell.number}</span>}
-                        <input
-                          ref={el => cellRefs.current[`${rIdx}-${cIdx}`] = el}
-                          type="text"
-                          className="cell-input-field"
-                          value={userGrid[rIdx]?.[cIdx] || ''}
-                          onChange={(e) => handleInputChange(e, rIdx, cIdx)}
-                          onKeyDown={(e) => handleKeyDown(e, rIdx, cIdx)}
-                          maxLength={2}
-                          disabled={!timerActive}
-                          readOnly={isLocked}
-                          style={{ fontSize: cellFontSize, paddingTop: inputPaddingTop }}
-                        />
-                      </div>
-                    );
-                  })
+                {difficulty === 'easy' && (
+                  <div className="hud-item">
+                    <span>Hint Kata: </span>
+                    <span className="hint-badge">
+                      {wordsRevealed} / 1
+                    </span>
+                  </div>
                 )}
               </div>
-            </div>
 
-            {/* Panel Clues */}
-            <div className="clues-container">
-              <div className="clue-box clue-box-across">
-                <h3><Icon icon="solar:arrow-right-circle-bold-duotone" /> Mendatar</h3>
-                <ul className="clues-list">
-                  {clues.across.map((clue) => {
-                    const isActive = selectedDirection === 'H' && activeClue && activeClue.number === clue.number;
-                    const isSolved = isClueSolved(clue, 'H');
-                    return (
-                      <li
-                        key={`across-${clue.number}`}
-                        ref={el => acrossClueRefs.current[clue.number] = el}
-                        className={`clue-item ${isActive ? 'clue-active-across' : ''} ${isSolved ? 'clue-solved' : ''}`}
-                        onClick={() => handleClueClick(clue, 'H')}
-                      >
-                        <span className="clue-num">{clue.number}</span>
-                        <span className="clue-text">{clue.clue}</span>
-                        <span className="clue-len">({clue.word.length})</span>
-                      </li>
-                    );
-                  })}
-                </ul>
+              {/* Toolbar game actions */}
+              <div className="controls-bar">
+                <button className="btn btn-accent" onClick={checkAnswers} disabled={!timerActive}>
+                  <Icon icon="solar:check-circle-bold" /> Cek Jawaban
+                </button>
+                <button
+                  className="btn btn-secondary"
+                  onClick={revealLetter}
+                  disabled={!selectedCell || !timerActive || lettersRevealed >= (difficulty === 'easy' ? 5 : difficulty === 'medium' ? 3 : 1)}
+                  title="Buka huruf terpilh"
+                >
+                  <Icon icon="solar:eye-bold" /> Buka Huruf
+                </button>
+                {difficulty === 'easy' && (
+                  <button
+                    className="btn btn-secondary"
+                    onClick={revealWord}
+                    disabled={activeWordCells.length === 0 || !timerActive || wordsRevealed >= 1}
+                    title="Buka seluruh kata"
+                  >
+                    <Icon icon="solar:book-2-bold" /> Buka Kata
+                  </button>
+                )}
+                <button className="btn btn-secondary" onClick={resetGrid} disabled={!timerActive}>
+                  <Icon icon="solar:eraser-bold" /> Reset Papan
+                </button>
               </div>
 
-              <div className="clue-box clue-box-down">
-                <h3><Icon icon="solar:arrow-down-circle-bold-duotone" /> Menurun</h3>
-                <ul className="clues-list">
-                  {clues.down.map((clue) => {
-                    const isActive = selectedDirection === 'V' && activeClue && activeClue.number === clue.number;
-                    const isSolved = isClueSolved(clue, 'V');
-                    return (
-                      <li
-                        key={`down-${clue.number}`}
-                        ref={el => downClueRefs.current[clue.number] = el}
-                        className={`clue-item ${isActive ? 'clue-active-down' : ''} ${isSolved ? 'clue-solved' : ''}`}
-                        onClick={() => handleClueClick(clue, 'V')}
-                      >
-                        <span className="clue-num">{clue.number}</span>
-                        <span className="clue-text">{clue.clue}</span>
-                        <span className="clue-len">({clue.word.length})</span>
-                      </li>
-                    );
-                  })}
-                </ul>
+              {/* Banner Petunjuk Terpilih */}
+              {activeClue && (
+                <div className="active-clue-banner animate-slide-in" style={{ width: '100%' }}>
+                  <span className={`banner-badge ${selectedDirection === 'H' ? 'across' : 'down'}`}>
+                    {selectedDirection === 'H' ? 'Mendatar' : 'Menurun'}
+                  </span>
+                  <span className="banner-num">{activeClue.number}</span>
+                  <span className="banner-text">{activeClue.clue}</span>
+                </div>
+              )}
+            </aside>
+
+            <main className="game-main-content">
+              {/* Grid Papan TTS */}
+              <div className="game-layout">
+                <div className="board-container">
+                  <div
+                    className="crossword-grid"
+                    style={{ gridTemplateColumns: `repeat(${gridSize}, 1fr)`, gap: gridGap }}
+                  >
+                    {gridData.map((row, rIdx) =>
+                      row.map((cell, cIdx) => {
+                        const isPlayable = !cell.isEmpty;
+                        const isLocked = lockedCells.some(lc => lc.row === rIdx && lc.col === cIdx);
+                        const isActiveCell = selectedCell && selectedCell.row === rIdx && selectedCell.col === cIdx;
+                        const isActiveWord = activeWordCells.some(c => c.row === rIdx && c.col === cIdx);
+
+                        if (!isPlayable) {
+                          return <div key={`cell-${rIdx}-${cIdx}`} className="grid-cell cell-empty" />;
+                        }
+
+                        let cellHighlightClass = 'cell-input';
+                        if (isLocked) {
+                          cellHighlightClass += ' cell-locked';
+                        } else if (isActiveCell) {
+                          cellHighlightClass += selectedDirection === 'H' ? ' cell-active-cell' : ' cell-active-cell-teal';
+                        } else if (isActiveWord) {
+                          cellHighlightClass += selectedDirection === 'H' ? ' cell-active-word' : ' cell-active-word-teal';
+                        }
+
+                        if (isChecked && feedbackGrid[rIdx] && feedbackGrid[rIdx][cIdx]) {
+                          const feedback = feedbackGrid[rIdx][cIdx];
+                          if (feedback === 'correct') cellHighlightClass += ' cell-correct';
+                          if (feedback === 'error') cellHighlightClass += ' cell-error';
+                        }
+
+                        return (
+                          <div
+                            key={`cell-${rIdx}-${cIdx}`}
+                            className={`grid-cell ${cellHighlightClass}`}
+                            onClick={() => handleCellClick(rIdx, cIdx)}
+                          >
+                            {cell.number > 0 && <span className="cell-number" style={{ fontSize: numberFontSize }}>{cell.number}</span>}
+                            <input
+                              ref={el => cellRefs.current[`${rIdx}-${cIdx}`] = el}
+                              type="text"
+                              className="cell-input-field"
+                              value={userGrid[rIdx]?.[cIdx] || ''}
+                              onChange={(e) => handleInputChange(e, rIdx, cIdx)}
+                              onKeyDown={(e) => handleKeyDown(e, rIdx, cIdx)}
+                              maxLength={2}
+                              disabled={!timerActive}
+                              readOnly={isLocked}
+                              style={{ fontSize: cellFontSize, paddingTop: inputPaddingTop }}
+                            />
+                          </div>
+                        );
+                      })
+                    )}
+                  </div>
+                </div>
+
+                {/* Panel Clues */}
+                <div className="clues-container">
+                  <div className="clue-box clue-box-across">
+                    <h3><Icon icon="solar:arrow-right-circle-bold-duotone" /> Mendatar</h3>
+                    <ul className="clues-list">
+                      {clues.across.map((clue) => {
+                        const isActive = selectedDirection === 'H' && activeClue && activeClue.number === clue.number;
+                        const isSolved = isClueSolved(clue, 'H');
+                        return (
+                          <li
+                            key={`across-${clue.number}`}
+                            ref={el => acrossClueRefs.current[clue.number] = el}
+                            className={`clue-item ${isActive ? 'clue-active-across' : ''} ${isSolved ? 'clue-solved' : ''}`}
+                            onClick={() => handleClueClick(clue, 'H')}
+                          >
+                            <span className="clue-num">{clue.number}</span>
+                            <span className="clue-text">{clue.clue}</span>
+                            <span className="clue-len">({clue.word.length})</span>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  </div>
+
+                  <div className="clue-box clue-box-down">
+                    <h3><Icon icon="solar:arrow-down-circle-bold-duotone" /> Menurun</h3>
+                    <ul className="clues-list">
+                      {clues.down.map((clue) => {
+                        const isActive = selectedDirection === 'V' && activeClue && activeClue.number === clue.number;
+                        const isSolved = isClueSolved(clue, 'V');
+                        return (
+                          <li
+                            key={`down-${clue.number}`}
+                            ref={el => downClueRefs.current[clue.number] = el}
+                            className={`clue-item ${isActive ? 'clue-active-down' : ''} ${isSolved ? 'clue-solved' : ''}`}
+                            onClick={() => handleClueClick(clue, 'V')}
+                          >
+                            <span className="clue-num">{clue.number}</span>
+                            <span className="clue-text">{clue.clue}</span>
+                            <span className="clue-len">({clue.word.length})</span>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  </div>
+                </div>
               </div>
-            </div>
+            </main>
           </div>
 
           <section className="instructions">
