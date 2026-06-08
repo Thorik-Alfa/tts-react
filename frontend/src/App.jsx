@@ -100,6 +100,7 @@ function App() {
   const [wordCount, setWordCount] = useState(15); // 15 | 30 | 50 (Easy = 15, Medium = 30, Hard = 50)
   const [timerMode, setTimerMode] = useState('10'); // '10' | '30' | 'free' (minutes)
   const [difficulty, setDifficulty] = useState('easy'); // 'easy' | 'medium' | 'hard'
+  const [customGridSizeSetting, setCustomGridSizeSetting] = useState('auto'); // 'auto' | '15' | '20' | '25'
 
   // Crossword Grid Data
   const [gridData, setGridData] = useState(null);
@@ -282,9 +283,10 @@ function App() {
       }
 
       // Generate crossword puzzle locally using imported module
-      const data = generateCrossword(targetCount, dbWords);
+      const targetGridSize = customGridSizeSetting === 'auto' ? null : parseInt(customGridSizeSetting);
+      const data = generateCrossword(targetCount, dbWords, targetGridSize);
       if (!data) {
-        throw new Error('Gagal menghasilkan teka-teki silang secara lokal.');
+        throw new Error('Failed to generate crossword puzzle locally.');
       }
 
       setGridData(data.grid);
@@ -333,7 +335,7 @@ function App() {
       }
     } catch (err) {
       console.error(err);
-      setError('Gagal memuat data dari database PostgreSQL.');
+      setError('Failed to load data from PostgreSQL database.');
       setLoading(false);
     }
   };
@@ -348,11 +350,11 @@ function App() {
         const data = await res.json();
         setLeaderboardData(data || []);
       } else {
-        throw new Error('Server sedang galat');
+        throw new Error('Server error');
       }
     } catch (err) {
       console.error('Failed to fetch leaderboard:', err);
-      setError('Server sedang galat');
+      setError('Server error');
       setLeaderboardData([]);
     } finally {
       setLoading(false);
@@ -368,11 +370,11 @@ function App() {
         const data = await res.json();
         setDbWords(data || []);
       } else {
-        throw new Error('Server sedang galat');
+        throw new Error('Server error');
       }
     } catch (err) {
       console.error('Failed to fetch words:', err);
-      setError('Server sedang galat');
+      setError('Server error');
       setDbWords([]);
     }
   };
@@ -386,7 +388,7 @@ function App() {
     setAdminSuccess('');
     const wordUpper = newWord.trim().toUpperCase().replace(/[^A-Z]/g, '');
     if (!wordUpper) {
-      setAdminError('Kata hanya boleh berisi huruf A-Z.');
+      setAdminError('Word must only contain letters A-Z.');
       setActionLoading(false);
       return;
     }
@@ -399,17 +401,17 @@ function App() {
       });
 
       if (res.ok) {
-        setAdminSuccess(`Kata "${wordUpper}" berhasil ditambahkan!`);
+        setAdminSuccess(`Word "${wordUpper}" successfully added!`);
         setNewWord('');
         setNewClue('');
         fetchWords();
       } else {
-        throw new Error('Server sedang galat');
+        throw new Error('Server error');
       }
     } catch (err) {
       console.error(err);
-      setAdminError('Gagal menambahkan kata. Server sedang galat.');
-      setError('Server sedang galat');
+      setAdminError('Failed to add word. Server error.');
+      setError('Server error');
     } finally {
       setActionLoading(false);
     }
@@ -417,7 +419,7 @@ function App() {
 
   // Delete a word from database in Admin Panel strictly
   const handleDeleteWord = async (wordToDelete) => {
-    if (!window.confirm(`Hapus kata "${wordToDelete}"?`)) return;
+    if (!window.confirm(`Delete word "${wordToDelete}"?`)) return;
     setActionLoading(true);
     setAdminError('');
     setAdminSuccess('');
@@ -428,15 +430,15 @@ function App() {
       });
 
       if (res.ok) {
-        setAdminSuccess(`Kata "${wordToDelete}" berhasil dihapus!`);
+        setAdminSuccess(`Word "${wordToDelete}" successfully deleted!`);
         fetchWords();
       } else {
-        throw new Error('Server sedang galat');
+        throw new Error('Server error');
       }
     } catch (err) {
       console.error(err);
-      setAdminError('Gagal menghapus kata. Server sedang galat.');
-      setError('Server sedang galat');
+      setAdminError('Failed to delete word. Server error.');
+      setError('Server error');
     } finally {
       setActionLoading(false);
     }
@@ -590,13 +592,13 @@ function App() {
           const pct = totalWords > 0 ? Math.round((correctWords / totalWords) * 100) : 0;
 
           if (pct >= 75 && !milestones.p75) {
-            showToast(`Luar biasa! Tinggal dikit lagi! 🌟`, "success");
+            showToast(`Amazing! Just a little bit left! 🌟`, "success");
             setMilestones(prev => ({ ...prev, p75: true }));
           } else if (pct >= 50 && !milestones.p50) {
-            showToast(`Hebat! Kamu sudah menyelesaikan setengah jalan! Mantap! 👍`, "success");
+            showToast(`Great! You are halfway there! Keep it up! 👍`, "success");
             setMilestones(prev => ({ ...prev, p50: true }));
           } else if (pct >= 25 && !milestones.p25) {
-            showToast(`Langkah awal yang bagus! Seperempat jalan terlewati, teruskan! ✨`, "success");
+            showToast(`Good start! A quarter of the way done, keep going! ✨`, "success");
             setMilestones(prev => ({ ...prev, p25: true }));
           }
         } else {
@@ -633,11 +635,11 @@ function App() {
         setScoreSubmitted(true);
         fetchLeaderboard();
       } else {
-        throw new Error('Server sedang galat');
+        throw new Error('Server error');
       }
     } catch (err) {
       console.error('Failed to submit score:', err);
-      setError('Server sedang galat');
+      setError('Server error');
     }
   };
 
@@ -934,15 +936,15 @@ function App() {
     } else {
       // Show progress toast
       const pct = totalWords > 0 ? Math.round((correctWords / totalWords) * 100) : 0;
-      let motivational = "Ayo semangat, terus cari kata lainnya! 💪";
+      let motivational = "Keep it up, keep looking for other words! 💪";
       if (pct >= 75) {
-        motivational = "Sedikit lagi! Kamu luar biasa! 🌟";
+        motivational = "Almost there! You are amazing! 🌟";
       } else if (pct >= 50) {
-        motivational = "Setengah jalan terlewati, mantap! 👍";
+        motivational = "Halfway done, great job! 👍";
       } else if (pct >= 25) {
-        motivational = "Usaha yang bagus! Lanjutkan perjuanganmu! ✨";
+        motivational = "Good effort! Keep going! ✨";
       }
-      showToast(`Progres: ${correctWords} dari ${totalWords} kata benar (${correctWords * 5} Poin). ${motivational}`, "info");
+      showToast(`Progress: ${correctWords} of ${totalWords} correct words (${correctWords * 5} Pts). ${motivational}`, "info");
 
       // Wrong answers: decrease health - Disabled for now
       playSound('error');
@@ -1037,7 +1039,7 @@ function App() {
     setUserGrid(newGrid);
     setFeedbackGrid(newFeedback);
     setIsChecked(true);
-    showToast("Semua jawaban telah terbuka.", "info");
+    showToast("All answers have been revealed.", "info");
   };
 
   // Exit from current game back to main menu
@@ -1067,17 +1069,17 @@ function App() {
   const numberFontSize = gridSize >= 25 ? '0.45rem' : gridSize >= 20 ? '0.55rem' : '0.65rem';
   const inputPaddingTop = gridSize >= 25 ? '2px' : gridSize >= 20 ? '4px' : '6px';
 
-  if (error === 'Server sedang galat') {
+  if (error === 'Server error') {
     return (
       <div className="app-container">
         <div className="menu-wrapper">
           <div className="menu-card" style={{ borderColor: 'var(--color-error)' }}>
             <div className="menu-logo" style={{ color: 'var(--color-error)' }}>
               <Icon icon="solar:danger-bold-duotone" className="icon" style={{ fontSize: '3rem' }} />
-              <h2>Server Sedang Galat</h2>
+              <h2>Server Error</h2>
             </div>
             <p style={{ textAlign: 'center', margin: '1rem 0', color: 'var(--text-muted)' }}>
-              Gagal menghubungkan ke server backend Go. Silakan periksa koneksi internet Anda atau pastikan server backend Anda sedang aktif.
+              Failed to connect to the backend Go server. Please check your network connection or make sure your server is active.
             </p>
             <button
               className="btn btn-primary"
@@ -1088,7 +1090,7 @@ function App() {
               }}
               style={{ width: '100%', justifyContent: 'center' }}
             >
-              <Icon icon="solar:restart-bold" /> Hubungkan Kembali
+              <Icon icon="solar:restart-bold" /> Reconnect
             </button>
           </div>
         </div>
@@ -1105,9 +1107,9 @@ function App() {
             <div className="modal-icon" style={{ color: 'var(--accent-purple)' }}>
               <Icon icon="solar:history-bold-duotone" style={{ fontSize: '4.5rem' }} />
             </div>
-            <h2>Lanjutkan Permainan?</h2>
+            <h2>Resume Game?</h2>
             <p style={{ margin: '10px 0', color: 'var(--text-muted)', lineHeight: '1.5' }}>
-              Kami menemukan sesi permainan sebelumnya milik <strong>{savedGameToRestore.username}</strong> yang belum selesai ({savedGameToRestore.difficulty.toUpperCase()} mode).
+              We found an unfinished game session belonging to <strong>{savedGameToRestore.username}</strong> ({savedGameToRestore.difficulty.toUpperCase()} mode).
             </p>
             <div style={{ display: 'flex', gap: '1rem', width: '100%', marginTop: '1rem' }}>
               <button
@@ -1115,14 +1117,14 @@ function App() {
                 style={{ flex: 1, justifyContent: 'center' }}
                 onClick={restoreSavedGame}
               >
-                Lanjutkan
+                Resume
               </button>
               <button
                 className="btn btn-secondary"
                 style={{ flex: 1, justifyContent: 'center' }}
                 onClick={discardSavedGame}
               >
-                Mulai Baru
+                Start New
               </button>
             </div>
           </div>
@@ -1140,21 +1142,21 @@ function App() {
 
             <div className="menu-options">
               <button className="menu-btn menu-btn-play" onClick={() => menuNavigate('settings')}>
-                <Icon icon="solar:play-circle-bold" /> Main Game
+                <Icon icon="solar:play-circle-bold" /> Play Game
               </button>
               <button className="menu-btn" onClick={() => { fetchLeaderboard(); menuNavigate('leaderboard'); }}>
-                <Icon icon="solar:cup-first-bold-duotone" /> Papan Skor
+                <Icon icon="solar:cup-first-bold-duotone" /> Leaderboard
               </button>
               {new URLSearchParams(window.location.search).has('admin') && (
                 <button className="menu-btn" onClick={() => { setAdminPassword(''); setAdminLoginError(''); menuNavigate('admin-login'); }}>
-                  <Icon icon="solar:shield-user-bold-duotone" /> Menu Admin
+                  <Icon icon="solar:shield-user-bold-duotone" /> Admin Panel
                 </button>
               )}
               <button
                 className="menu-btn"
                 onClick={() => { playSound('click'); setTheme(prev => prev === 'dark' ? 'light' : 'dark'); }}
               >
-                <Icon icon={theme === 'dark' ? 'solar:sun-2-bold-duotone' : 'solar:moon-bold-duotone'} /> Tema {theme === 'dark' ? 'Terang' : 'Gelap'}
+                <Icon icon={theme === 'dark' ? 'solar:sun-2-bold-duotone' : 'solar:moon-bold-duotone'} /> {theme === 'dark' ? 'Light Theme' : 'Dark Theme'}
               </button>
             </div>
           </div>
@@ -1166,15 +1168,15 @@ function App() {
         <div className="settings-card">
           <div className="card-header">
             <Icon icon="solar:settings-bold-duotone" style={{ fontSize: '1.8rem', color: 'var(--accent-purple)' }} />
-            <h2>Pengaturan Game</h2>
+            <h2>Game Settings</h2>
           </div>
 
           {/* Player Name Input */}
           <div className="settings-group">
-            <label>Nama Pemain</label>
+            <label>Player Name</label>
             <input
               type="text"
-              placeholder="Masukkan nama Anda..."
+              placeholder="Enter your name..."
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               maxLength={15}
@@ -1193,19 +1195,19 @@ function App() {
             />
             {username.trim() === '' && (
               <span style={{ fontSize: '0.75rem', color: 'var(--color-error)', textAlign: 'center', marginTop: '0.25rem' }}>
-                *Nama wajib diisi sebelum bermain
+                *Name is required to play
               </span>
             )}
           </div>
 
           {/* Timer Countdowns */}
           <div className="settings-group">
-            <label>Batasan Waktu</label>
+            <label>Time Limit</label>
             <div className="settings-options">
               {[
-                { label: '10 Menit', val: '10' },
-                { label: '30 Menit', val: '30' },
-                { label: 'Bebas', val: 'free' }
+                { label: '10 Minutes', val: '10' },
+                { label: '30 Minutes', val: '30' },
+                { label: 'No Limit', val: 'free' }
               ].map(opt => (
                 <button
                   key={`tm-${opt.val}`}
@@ -1220,12 +1222,12 @@ function App() {
 
           {/* Difficulty Modes */}
           <div className="settings-group">
-            <label>Tingkat Kesulitan</label>
+            <label>Difficulty</label>
             <div className="settings-options">
               {[
-                { label: 'Easy (5 Buka Huruf, 1 Buka Kata)', val: 'easy' },
-                { label: 'Medium (3 Buka Huruf)', val: 'medium' },
-                { label: 'Hard (1 Buka Huruf)', val: 'hard' }
+                { label: 'Easy (5 Reveal Letter, 1 Reveal Word)', val: 'easy' },
+                { label: 'Medium (3 Reveal Letter)', val: 'medium' },
+                { label: 'Hard (1 Reveal Letter)', val: 'hard' }
               ].map(opt => (
                 <button
                   key={`diff-${opt.val}`}
@@ -1239,6 +1241,27 @@ function App() {
             </div>
           </div>
 
+          {/* Custom Grid Size Option */}
+          <div className="settings-group">
+            <label>Board Grid Size</label>
+            <div className="settings-options">
+              {[
+                { label: 'Auto', val: 'auto' },
+                { label: '15 x 15', val: '15' },
+                { label: '20 x 20', val: '20' },
+                { label: '25 x 25', val: '25' }
+              ].map(opt => (
+                <button
+                  key={`gs-${opt.val}`}
+                  className={`option-btn ${customGridSizeSetting === opt.val ? 'active' : ''}`}
+                  onClick={() => { playSound('click'); setCustomGridSizeSetting(opt.val); }}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
           <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem', width: '100%' }}>
             <button
               className="btn btn-primary"
@@ -1246,10 +1269,10 @@ function App() {
               style={{ flex: 1, justifyContent: 'center' }}
               disabled={!username.trim()}
             >
-              <Icon icon="solar:play-circle-bold" /> Mulai Bermain
+              <Icon icon="solar:play-circle-bold" /> Start Playing
             </button>
             <button className="btn btn-secondary" onClick={() => menuNavigate('menu')} style={{ flex: 1, justifyContent: 'center' }}>
-              Kembali
+              Back
             </button>
           </div>
         </div>
@@ -1260,7 +1283,7 @@ function App() {
         <div className="leaderboard-card">
           <div className="card-header">
             <Icon icon="solar:cup-first-bold-duotone" style={{ fontSize: '1.8rem', color: 'var(--accent-teal)' }} />
-            <h2>Papan Skor Teratas</h2>
+            <h2>Top Leaderboard</h2>
           </div>
 
           {loading ? (
@@ -1268,17 +1291,17 @@ function App() {
               <div className="spinner"></div>
             </div>
           ) : leaderboardData.length === 0 ? (
-            <p className="no-records">Belum ada skor tercatat. Jadilah yang pertama!</p>
+            <p className="no-records">No scores recorded yet. Be the first!</p>
           ) : (
             <div className="leaderboard-table-container">
               <table className="leaderboard-table">
                 <thead>
                   <tr>
-                    <th>Peringkat</th>
-                    <th>Nama</th>
-                    <th>Kesulitan</th>
-                    <th>Skor</th>
-                    <th>Waktu</th>
+                    <th>Rank</th>
+                    <th>Name</th>
+                    <th>Difficulty</th>
+                    <th>Score</th>
+                    <th>Time</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -1305,7 +1328,7 @@ function App() {
           )}
 
           <button className="btn btn-primary" onClick={() => menuNavigate('menu')} style={{ marginTop: '1rem' }}>
-            Kembali ke Menu
+            Back to Menu
           </button>
         </div>
       )}
@@ -1315,7 +1338,7 @@ function App() {
         <div className="settings-card" style={{ maxWidth: '400px' }}>
           <div className="card-header">
             <Icon icon="solar:lock-keyhole-bold-duotone" style={{ fontSize: '1.8rem', color: 'var(--accent-purple)' }} />
-            <h2>Login Admin</h2>
+            <h2>Admin Login</h2>
           </div>
           <form
             onSubmit={(e) => {
@@ -1328,16 +1351,16 @@ function App() {
                 setView('admin');
               } else {
                 playSound('error');
-                setAdminLoginError('Password salah!');
+                setAdminLoginError('Incorrect password!');
               }
             }}
             style={{ display: 'flex', flexDirection: 'column', gap: '1rem', width: '100%', marginTop: '1rem' }}
           >
             <div className="settings-group">
-              <label>Password Admin</label>
+              <label>Admin Password</label>
               <input
                 type="password"
-                placeholder="Masukkan password..."
+                placeholder="Enter password..."
                 value={adminPassword}
                 onChange={(e) => setAdminPassword(e.target.value)}
                 style={{
@@ -1363,10 +1386,10 @@ function App() {
             </div>
             <div style={{ display: 'flex', gap: '1rem', width: '100%', marginTop: '0.5rem' }}>
               <button type="submit" className="btn btn-primary" style={{ flex: 1, justifyContent: 'center' }}>
-                Masuk
+                Login
               </button>
               <button type="button" className="btn btn-secondary" onClick={() => menuNavigate('menu')} style={{ flex: 1, justifyContent: 'center' }}>
-                Batal
+                Cancel
               </button>
             </div>
           </form>
@@ -1378,16 +1401,16 @@ function App() {
         <div className="settings-card" style={{ maxWidth: '650px' }}>
           <div className="card-header">
             <Icon icon="solar:shield-user-bold-duotone" style={{ fontSize: '1.8rem', color: 'var(--accent-purple)' }} />
-            <h2>Menu Admin - Kelola Kata</h2>
+            <h2>Admin Panel - Manage Words</h2>
           </div>
 
           {/* Form Tambah Kata */}
           <form onSubmit={handleAddWordSubmit} className="admin-form" style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-            <h3 style={{ fontSize: '1rem', fontWeight: '700', color: 'var(--accent-teal)' }}>Tambah Kata Baru</h3>
+            <h3 style={{ fontSize: '1rem', fontWeight: '700', color: 'var(--accent-teal)' }}>Add New Word</h3>
             <div style={{ display: 'flex', gap: '0.5rem', width: '100%' }}>
               <input
                 type="text"
-                placeholder="KATA (A-Z)"
+                placeholder="WORD (A-Z)"
                 value={newWord}
                 onChange={(e) => setNewWord(e.target.value)}
                 style={{
@@ -1404,7 +1427,7 @@ function App() {
               />
               <input
                 type="text"
-                placeholder="Petunjuk / Clue"
+                placeholder="Clue"
                 value={newClue}
                 onChange={(e) => setNewClue(e.target.value)}
                 style={{
@@ -1420,7 +1443,7 @@ function App() {
                 required
               />
               <button type="submit" className="btn btn-primary" style={{ padding: '0.6rem 1rem' }} disabled={actionLoading}>
-                Tambah
+                Add
               </button>
             </div>
             {adminError && <p style={{ color: 'var(--color-error)', fontSize: '0.8rem', textAlign: 'center' }}>{adminError}</p>}
@@ -1431,21 +1454,21 @@ function App() {
 
           {/* Daftar Kata */}
           <h3 style={{ fontSize: '1rem', fontWeight: '700', color: 'var(--accent-purple)' }}>
-            Database Kata ({dbWords.length} kata)
+            Word Database ({dbWords.length} words)
           </h3>
 
           <div style={{ maxHeight: '250px', overflowY: 'auto', border: '1px solid var(--glass-border)', borderRadius: '12px', padding: '0.5rem' }}>
             {dbWords.length === 0 ? (
               <p style={{ textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.85rem', padding: '1rem' }}>
-                Belum ada kata tambahan di database.
+                No custom words in the database yet.
               </p>
             ) : (
               <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.85rem' }}>
                 <thead>
                   <tr style={{ borderBottom: '1px solid var(--glass-border)' }}>
-                    <th style={{ padding: '0.5rem', color: 'var(--accent-teal)' }}>Kata</th>
-                    <th style={{ padding: '0.5rem', color: 'var(--accent-teal)' }}>Petunjuk</th>
-                    <th style={{ padding: '0.5rem', color: 'var(--accent-teal)', textAlign: 'right' }}>Aksi</th>
+                    <th style={{ padding: '0.5rem', color: 'var(--accent-teal)' }}>Word</th>
+                    <th style={{ padding: '0.5rem', color: 'var(--accent-teal)' }}>Clue</th>
+                    <th style={{ padding: '0.5rem', color: 'var(--accent-teal)', textAlign: 'right' }}>Action</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -1478,7 +1501,7 @@ function App() {
           </div>
 
           <button className="btn btn-secondary" onClick={() => menuNavigate('menu')} style={{ alignSelf: 'center' }}>
-            Kembali ke Menu Utama
+            Back to Main Menu
           </button>
         </div>
       )}
@@ -1497,13 +1520,13 @@ function App() {
               <button
                 className="theme-toggle-btn"
                 onClick={() => setTheme(prev => prev === 'dark' ? 'light' : 'dark')}
-                title={theme === 'dark' ? 'Mode Terang' : 'Mode Gelap'}
+                title={theme === 'dark' ? 'Light Mode' : 'Dark Mode'}
               >
                 <Icon icon={theme === 'dark' ? 'solar:sun-2-bold-duotone' : 'solar:moon-bold-duotone'} />
               </button>
               <div
                 className="timer"
-                title={timerActive ? 'Jeda permainan' : 'Mulai permainan'}
+                title={timerActive ? 'Pause game' : 'Resume game'}
                 onClick={() => { playSound('click'); setTimerActive(!timerActive); }}
               >
                 <Icon icon={timerActive ? 'solar:clock-circle-bold-duotone' : 'solar:pause-circle-bold-duotone'} />
@@ -1517,14 +1540,14 @@ function App() {
               {/* Game HUD (Nyawa, Hint, dsb) */}
               <div className="hud-container">
                 <div className="hud-item">
-                  <span>Pemain: </span>
+                  <span>Player: </span>
                   <span className="hint-badge" style={{ background: 'rgba(139, 92, 246, 0.15)', color: 'var(--accent-purple-hover)' }}>
                     {username}
                   </span>
                 </div>
 
                 <div className="hud-item">
-                  <span>Progress Nilai: </span>
+                  <span>Progress Pts: </span>
                   <span className="hint-badge" style={{ background: 'rgba(6, 182, 212, 0.15)', color: 'var(--accent-teal-hover)', borderColor: 'rgba(6, 182, 212, 0.25)', fontWeight: 'bold' }}>
                     {getCorrectWordsCount() * 5} of {(clues.across.length + clues.down.length) * 5} ({clues.across.length + clues.down.length > 0 ? Math.round((getCorrectWordsCount() / (clues.across.length + clues.down.length)) * 100) : 0}%)
                   </span>
@@ -1533,7 +1556,7 @@ function App() {
                 {/* Health / Nyawa - Disabled for now */}
 
                 <div className="hud-item">
-                  <span>Hint Huruf: </span>
+                  <span>Letter Hint: </span>
                   <span className="hint-badge">
                     {lettersRevealed} / {difficulty === 'easy' ? 5 : difficulty === 'medium' ? 3 : 1}
                   </span>
@@ -1541,7 +1564,7 @@ function App() {
 
                 {difficulty === 'easy' && (
                   <div className="hud-item">
-                    <span>Hint Kata: </span>
+                    <span>Word Hint: </span>
                     <span className="hint-badge">
                       {wordsRevealed} / 1
                     </span>
@@ -1552,28 +1575,28 @@ function App() {
               {/* Toolbar game actions */}
               <div className="controls-bar">
                 <button className="btn btn-accent" onClick={checkAnswers} disabled={!timerActive}>
-                  <Icon icon="solar:check-circle-bold" /> Cek Jawaban
+                  <Icon icon="solar:check-circle-bold" /> Check Answers
                 </button>
                 <button
                   className="btn btn-secondary"
                   onClick={revealLetter}
                   disabled={!selectedCell || !timerActive || lettersRevealed >= (difficulty === 'easy' ? 5 : difficulty === 'medium' ? 3 : 1)}
-                  title="Buka huruf terpilh"
+                  title="Reveal selected letter"
                 >
-                  <Icon icon="solar:eye-bold" /> Buka Huruf
+                  <Icon icon="solar:eye-bold" /> Reveal Letter
                 </button>
                 {difficulty === 'easy' && (
                   <button
                     className="btn btn-secondary"
                     onClick={revealWord}
                     disabled={activeWordCells.length === 0 || !timerActive || wordsRevealed >= 1}
-                    title="Buka seluruh kata"
+                    title="Reveal selected word"
                   >
-                    <Icon icon="solar:book-2-bold" /> Buka Kata
+                    <Icon icon="solar:book-2-bold" /> Reveal Word
                   </button>
                 )}
                 <button className="btn btn-secondary" onClick={resetGrid} disabled={!timerActive || hasGivenUp}>
-                  <Icon icon="solar:eraser-bold" /> Reset Papan
+                  <Icon icon="solar:eraser-bold" /> Reset Board
                 </button>
                 {!hasGivenUp ? (
                   <button
@@ -1581,25 +1604,25 @@ function App() {
                     style={{ borderColor: 'var(--color-error)', color: 'var(--color-error)' }}
                     onClick={handleGiveUp}
                     disabled={!timerActive}
-                    title="Menyerah"
+                    title="Surrender"
                   >
-                    <Icon icon="solar:danger-bold" /> Menyerah
+                    <Icon icon="solar:danger-bold" /> Surrender
                   </button>
                 ) : (
                   <>
                     <button
                       className="btn btn-accent"
                       onClick={revealAllAnswers}
-                      title="Buka semua jawaban"
+                      title="Reveal all answers"
                     >
-                      <Icon icon="solar:eye-bold" /> Buka Jawaban
+                      <Icon icon="solar:eye-bold" /> Reveal Answers
                     </button>
                     <button
                       className="btn btn-secondary"
                       onClick={exitGame}
-                      title="Keluar ke menu utama"
+                      title="Exit to main menu"
                     >
-                      <Icon icon="solar:logout-bold" /> Keluar
+                      <Icon icon="solar:logout-bold" /> Exit
                     </button>
                   </>
                 )}
@@ -1609,7 +1632,7 @@ function App() {
               {activeClue && (
                 <div className="active-clue-banner animate-slide-in" style={{ width: '100%' }}>
                   <span className={`banner-badge ${selectedDirection === 'H' ? 'across' : 'down'}`}>
-                    {selectedDirection === 'H' ? 'Mendatar' : 'Menurun'}
+                    {selectedDirection === 'H' ? 'Across' : 'Down'}
                   </span>
                   <span className="banner-num">{activeClue.number}</span>
                   <span className="banner-text">{activeClue.clue}</span>
@@ -1680,7 +1703,7 @@ function App() {
                 {/* Panel Clues */}
                 <div className="clues-container">
                   <div className="clue-box clue-box-across">
-                    <h3><Icon icon="solar:arrow-right-circle-bold-duotone" /> Mendatar</h3>
+                    <h3><Icon icon="solar:arrow-right-circle-bold-duotone" /> Across</h3>
                     <ul className="clues-list">
                       {clues.across.map((clue) => {
                         const isActive = selectedDirection === 'H' && activeClue && activeClue.number === clue.number;
@@ -1702,7 +1725,7 @@ function App() {
                   </div>
 
                   <div className="clue-box clue-box-down">
-                    <h3><Icon icon="solar:arrow-down-circle-bold-duotone" /> Menurun</h3>
+                    <h3><Icon icon="solar:arrow-down-circle-bold-duotone" /> Down</h3>
                     <ul className="clues-list">
                       {clues.down.map((clue) => {
                         const isActive = selectedDirection === 'V' && activeClue && activeClue.number === clue.number;
@@ -1728,12 +1751,12 @@ function App() {
           </div>
 
           <section className="instructions">
-            <h4><Icon icon="solar:info-circle-bold-duotone" /> Navigasi</h4>
+            <h4><Icon icon="solar:info-circle-bold-duotone" /> Navigation</h4>
             <ul>
-              <li>Klik sel/petunjuk untuk memilih.</li>
-              <li><span className="key-cap">Space</span>: Ubah arah.</li>
-              <li><span className="key-cap">←</span> <span className="key-cap">↑</span> <span className="key-cap">→</span> <span className="key-cap">↓</span>: Pindah sel.</li>
-              <li><span className="key-cap">Backspace</span>: Hapus.</li>
+              <li>Click cell/clue to select.</li>
+              <li><span className="key-cap">Space</span>: Toggle direction.</li>
+              <li><span className="key-cap">←</span> <span className="key-cap">↑</span> <span className="key-cap">→</span> <span className="key-cap">↓</span>: Move focus.</li>
+              <li><span className="key-cap">Backspace</span>: Delete.</li>
             </ul>
           </section>
         </>
@@ -1745,9 +1768,9 @@ function App() {
             <div className="modal-icon" style={{ color: 'var(--color-error)' }}>
               <Icon icon="solar:danger-bold-duotone" style={{ fontSize: '4.5rem' }} />
             </div>
-            <h2>Konfirmasi Menyerah</h2>
+            <h2>Confirm Surrender</h2>
             <p style={{ margin: '10px 0', color: 'var(--text-muted)', lineHeight: '1.5' }}>
-              Apakah Anda yakin ingin menyerah? Waktu pengerjaan akan dihentikan dan Anda bisa membuka seluruh jawaban.
+              Are you sure you want to surrender? The timer will stop and you can reveal all answers.
             </p>
             <div style={{ display: 'flex', gap: '1rem', width: '100%', marginTop: '1rem' }}>
               <button
@@ -1758,10 +1781,10 @@ function App() {
                   playSound('click');
                   setTimerActive(false);
                   setHasGivenUp(true);
-                  showToast("Anda telah menyerah. Tombol 'Buka Jawaban' sekarang tersedia di sidebar.", "info");
+                  showToast("You have surrendered. 'Reveal Answers' button is now available in the sidebar.", "info");
                 }}
               >
-                Ya, Menyerah
+                Yes, Surrender
               </button>
               <button
                 className="btn btn-secondary"
@@ -1771,7 +1794,7 @@ function App() {
                   setShowGiveUpConfirm(false);
                 }}
               >
-                Batal
+                Cancel
               </button>
             </div>
           </div>
@@ -1785,23 +1808,23 @@ function App() {
         const pct = totalWords > 0 ? Math.round((correctWords / totalWords) * 100) : 0;
 
         let motivationalMessage = "";
-        let winTitle = "Permainan Selesai!";
+        let winTitle = "Game Completed!";
         let iconName = "solar:star-bold-duotone";
         let iconColor = "#06b6d4";
 
         if (pct === 100) {
-          winTitle = "Selamat, Sempurna!";
-          motivationalMessage = "Luar biasa! Kamu berhasil melahap semua kata dengan sempurna! 🏆";
+          winTitle = "Perfect Victory!";
+          motivationalMessage = "Awesome! You solved all words perfectly! 🏆";
           iconName = "solar:cup-first-bold-duotone";
           iconColor = "#eab308";
         } else if (pct >= 75) {
-          motivationalMessage = "Keren banget! Sedikit lagi menuju sempurna. Pertahankan prestasimu! 💪";
+          motivationalMessage = "Great job! Just a little bit left to perfection. Keep it up! 💪";
         } else if (pct >= 50) {
-          motivationalMessage = "Kerja bagus! Usaha yang hebat, kamu sudah menguasai sebagian besar kata! 👍";
+          motivationalMessage = "Good effort! You solved most of the words! 👍";
         } else if (pct >= 25) {
-          motivationalMessage = "Tetap semangat! Setiap kesalahan adalah langkah menuju pintar. Coba lagi yuk! ✨";
+          motivationalMessage = "Keep going! Every mistake is a step to learning. Try again! ✨";
         } else {
-          motivationalMessage = "Jangan menyerah! Awal yang baik untuk belajar. Mari coba lagi dan taklukkan kata-kata ini! 🔥";
+          motivationalMessage = "Don't give up! A good start to learn. Try again and conquer the board! 🔥";
           iconName = "solar:heart-broken-bold";
           iconColor = "#ef4444";
         }
@@ -1831,29 +1854,29 @@ function App() {
 
               <div className="modal-stats">
                 <div className="modal-stat-card">
-                  <div className="stat-label">Progress Nilai</div>
+                  <div className="stat-label">Progress Pts</div>
                   <div className="stat-value" style={{ color: 'var(--accent-teal-hover)', fontSize: '1.2rem' }}>
                     {correctWords * 5} / {totalWords * 5} Pts
                   </div>
                 </div>
                 <div className="modal-stat-card">
-                  <div className="stat-label">Persentase</div>
+                  <div className="stat-label">Percentage</div>
                   <div className="stat-value" style={{ color: 'var(--accent-purple-hover)', fontSize: '1.2rem' }}>
                     {pct}%
                   </div>
                 </div>
                 <div className="modal-stat-card" style={{ gridColumn: 'span 2' }}>
-                  <div className="stat-label">Waktu Tempuh</div>
+                  <div className="stat-label">Time Spent</div>
                   <div className="stat-value" style={{ fontSize: '1.2rem' }}>{formatTime(timeSpent)}</div>
                 </div>
               </div>
 
               <div style={{ marginTop: '1rem', width: '100%' }}>
                 <p style={{ color: 'var(--color-success)', fontWeight: '700', fontSize: '0.9rem', marginBottom: '1rem' }}>
-                  Skor untuk <strong style={{ color: 'var(--accent-purple-hover)' }}>{username}</strong> berhasil dicatat otomatis! 🏆
+                  Score for <strong style={{ color: 'var(--accent-purple-hover)' }}>{username}</strong> has been recorded automatically! 🏆
                 </p>
                 <button className="btn btn-primary" onClick={exitGame} style={{ width: '100%', justifyContent: 'center' }}>
-                  Kembali ke Menu Utama
+                  Back to Main Menu
                 </button>
               </div>
             </div>
@@ -1869,21 +1892,21 @@ function App() {
               <Icon icon="solar:heart-broken-bold" style={{ fontSize: '4.5rem' }} />
             </div>
             <h2>Game Over!</h2>
-            <p>Anda kehabisan nyawa atau waktu habis.</p>
+            <p>You ran out of time or lives.</p>
 
             <div className="modal-stats" style={{ gridTemplateColumns: '1fr' }}>
               <div className="modal-stat-card">
-                <div className="stat-label">Tingkat Kesulitan</div>
+                <div className="stat-label">Difficulty</div>
                 <div className="stat-value" style={{ textTransform: 'uppercase' }}>{difficulty}</div>
               </div>
             </div>
 
             <div className="menu-options" style={{ width: '100%' }}>
               <button className="btn btn-primary" onClick={fetchNewPuzzle} style={{ width: '100%', justifyContent: 'center' }}>
-                <Icon icon="solar:restart-bold" /> Main Lagi
+                <Icon icon="solar:restart-bold" /> Play Again
               </button>
               <button className="btn btn-secondary" onClick={exitGame} style={{ width: '100%', justifyContent: 'center' }}>
-                <Icon icon="solar:logout-bold" /> Keluar ke Menu
+                <Icon icon="solar:logout-bold" /> Exit to Menu
               </button>
             </div>
           </div>

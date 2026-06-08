@@ -23,8 +23,8 @@ function getGridSize(minWords) {
 /**
  * Main function to generate a crossword puzzle.
  */
-export function generateCrossword(minWords, customWordList = null) {
-  const gridSize = getGridSize(minWords);
+export function generateCrossword(minWords, customWordList = null, customGridSize = null) {
+  const gridSize = customGridSize ? parseInt(customGridSize) : getGridSize(minWords);
 
   let poolSize = minWords + 25;
   if (poolSize < 40) poolSize = 40;
