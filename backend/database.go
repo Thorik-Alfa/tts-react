@@ -19,6 +19,7 @@ type WordEntry struct {
 }
 
 type LeaderboardEntry struct {
+	ID         int    `json:"id"`
 	Name       string `json:"name"`
 	Difficulty string `json:"difficulty"`
 	Score      int    `json:"score"`
@@ -195,7 +196,7 @@ func GetRandomWords(count int) ([]WordEntry, error) {
 
 // GetLeaderboard fetches top 10 scores
 func GetLeaderboard() ([]LeaderboardEntry, error) {
-	rows, err := db.Query("SELECT name, difficulty, score, time_spent, created_at FROM leaderboard ORDER BY score DESC, time_spent ASC LIMIT 10")
+	rows, err := db.Query("SELECT id, name, difficulty, score, time_spent, created_at FROM leaderboard ORDER BY score DESC, time_spent ASC LIMIT 10")
 	if err != nil {
 		return nil, err
 	}
@@ -205,7 +206,7 @@ func GetLeaderboard() ([]LeaderboardEntry, error) {
 	for rows.Next() {
 		var entry LeaderboardEntry
 		var createdAt time.Time
-		if err := rows.Scan(&entry.Name, &entry.Difficulty, &entry.Score, &entry.TimeSpent, &createdAt); err != nil {
+		if err := rows.Scan(&entry.ID, &entry.Name, &entry.Difficulty, &entry.Score, &entry.TimeSpent, &createdAt); err != nil {
 			return nil, err
 		}
 		entry.CreatedAt = createdAt.Format("2006-01-02 15:04:05")
@@ -246,7 +247,7 @@ func AddWord(word, clue string) error {
 	if wordClean == "" {
 		return fmt.Errorf("invalid word")
 	}
-	_, err := db.Exec("INSERT INTO words (word, clue) VALUES ($1, $2) ON CONFLICT (word) DO UPDATE SET clue = EXCLUDED.clue", wordClean, clue)
+	_, err := db.Exec("INSERT INTO words (word, clue) VALUES ($1, $2) ON CONFLICT (word) DO NOTHING", wordClean, clue)
 	return err
 }
 
@@ -255,5 +256,31 @@ func DeleteWord(word string) error {
 	wordClean := cleanWord(strings.ToUpper(strings.TrimSpace(word)))
 	_, err := db.Exec("DELETE FROM words WHERE word = $1", wordClean)
 	return err
+}
+
+// DeleteLeaderboardEntry deletes a leaderboard entry by id
+func DeleteLeaderboardEntry(id int) error {
+	_, err := db.Exec("DELETE FROM leaderboard WHERE id = $1", id)
+	return err
+}
+
+// ClearAllLeaderboard deletes all leaderboard entries
+func ClearAllLeaderboard() error {
+	_, err := db.Exec("TRUNCATE TABLE leaderboard")
+	if err != nil {
+		_, err = db.Exec("DELETE FROM leaderboard")
+	}
+	return err
+}
+
+// WordExists checks if a word already exists in the database
+func WordExists(word string) (bool, error) {
+	wordClean := cleanWord(strings.ToUpper(strings.TrimSpace(word)))
+	if wordClean == "" {
+		return false, nil
+	}
+	var exists bool
+	err := db.QueryRow("SELECT EXISTS(SELECT 1 FROM words WHERE word = $1)", wordClean).Scan(&exists)
+	return exists, err
 }
 

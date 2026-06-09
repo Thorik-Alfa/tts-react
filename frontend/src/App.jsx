@@ -158,6 +158,27 @@ function App() {
   const [actionLoading, setActionLoading] = useState(false);
   const [adminPassword, setAdminPassword] = useState('');
   const [adminLoginError, setAdminLoginError] = useState('');
+  const [adminTab, setAdminTab] = useState('words'); // 'words' | 'leaderboard'
+  const [excelFile, setExcelFile] = useState(null);
+  const [excelPreviewData, setExcelPreviewData] = useState([]);
+  const [confirmDialog, setConfirmDialog] = useState({
+    show: false,
+    title: '',
+    message: '',
+    onConfirm: null
+  });
+
+  const triggerConfirm = (title, message, onConfirm) => {
+    setConfirmDialog({
+      show: true,
+      title,
+      message,
+      onConfirm: () => {
+        onConfirm();
+        setConfirmDialog({ show: false, title: '', message: '', onConfirm: null });
+      }
+    });
+  };
 
   // Toast / Pop-up Progress Notification States
   const [toast, setToast] = useState(null);
@@ -418,30 +439,160 @@ function App() {
   };
 
   // Delete a word from database in Admin Panel strictly
-  const handleDeleteWord = async (wordToDelete) => {
-    if (!window.confirm(`Delete word "${wordToDelete}"?`)) return;
+  const handleDeleteWord = (wordToDelete) => {
+    triggerConfirm(
+      'Confirm Delete',
+      `Are you sure you want to delete word "${wordToDelete}"?`,
+      async () => {
+        setActionLoading(true);
+        setAdminError('');
+        setAdminSuccess('');
+        try {
+          const res = await fetch(`${API_BASE}/api/words?word=${wordToDelete}`, {
+            method: 'DELETE'
+          });
+
+          if (res.ok) {
+            setAdminSuccess(`Word "${wordToDelete}" successfully deleted!`);
+            fetchWords();
+          } else {
+            throw new Error('Server error');
+          }
+        } catch (err) {
+          console.error(err);
+          setAdminError('Failed to delete word. Server error.');
+          setError('Server error');
+        } finally {
+          setActionLoading(false);
+        }
+      }
+    );
+  };
+
+  const handleImportExcel = async (e) => {
+    if (e) e.preventDefault();
+    if (!excelFile) return;
     setActionLoading(true);
     setAdminError('');
     setAdminSuccess('');
 
+    const formData = new FormData();
+    formData.append('file', excelFile);
+
     try {
-      const res = await fetch(`${API_BASE}/api/words?word=${wordToDelete}`, {
-        method: 'DELETE'
+      const res = await fetch(`${API_BASE}/api/words/import`, {
+        method: 'POST',
+        body: formData
       });
 
       if (res.ok) {
-        setAdminSuccess(`Word "${wordToDelete}" successfully deleted!`);
+        const data = await res.json();
+        setAdminSuccess(`Successfully imported ${data.count} words from Excel!`);
+        setExcelFile(null);
+        setExcelPreviewData([]);
+        const fileInput = document.getElementById('excel-file-input');
+        if (fileInput) fileInput.value = '';
         fetchWords();
       } else {
-        throw new Error('Server error');
+        const txt = await res.text();
+        throw new Error(txt || 'Server error');
       }
     } catch (err) {
       console.error(err);
-      setAdminError('Failed to delete word. Server error.');
-      setError('Server error');
+      setAdminError(`Failed to import words: ${err.message}`);
     } finally {
       setActionLoading(false);
     }
+  };
+
+  const handlePreviewExcel = async (e) => {
+    e.preventDefault();
+    if (!excelFile) return;
+    setActionLoading(true);
+    setAdminError('');
+    setAdminSuccess('');
+    setExcelPreviewData([]);
+
+    const formData = new FormData();
+    formData.append('file', excelFile);
+
+    try {
+      const res = await fetch(`${API_BASE}/api/words/import-preview`, {
+        method: 'POST',
+        body: formData
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        setExcelPreviewData(data.data || []);
+      } else {
+        const txt = await res.text();
+        throw new Error(txt || 'Server error');
+      }
+    } catch (err) {
+      console.error(err);
+      setAdminError(`Failed to load preview: ${err.message}`);
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleDeleteLeaderboard = (id) => {
+    triggerConfirm(
+      'Confirm Delete',
+      'Are you sure you want to delete this leaderboard entry?',
+      async () => {
+        setActionLoading(true);
+        setAdminError('');
+        setAdminSuccess('');
+        try {
+          const res = await fetch(`${API_BASE}/api/leaderboard?id=${id}`, {
+            method: 'DELETE'
+          });
+
+          if (res.ok) {
+            setAdminSuccess('Leaderboard entry deleted successfully!');
+            fetchLeaderboard();
+          } else {
+            throw new Error('Server error');
+          }
+        } catch (err) {
+          console.error(err);
+          setAdminError('Failed to delete leaderboard entry. Server error.');
+        } finally {
+          setActionLoading(false);
+        }
+      }
+    );
+  };
+
+  const handleClearAllLeaderboard = () => {
+    triggerConfirm(
+      'Confirm Clear All',
+      'Are you sure you want to delete ALL leaderboard entries? This action cannot be undone.',
+      async () => {
+        setActionLoading(true);
+        setAdminError('');
+        setAdminSuccess('');
+        try {
+          const res = await fetch(`${API_BASE}/api/leaderboard?all=true`, {
+            method: 'DELETE'
+          });
+
+          if (res.ok) {
+            setAdminSuccess('All leaderboard entries cleared successfully!');
+            fetchLeaderboard();
+          } else {
+            throw new Error('Server error');
+          }
+        } catch (err) {
+          console.error(err);
+          setAdminError('Failed to clear leaderboard. Server error.');
+        } finally {
+          setActionLoading(false);
+        }
+      }
+    );
   };
 
   // Mount effect to load initial data
@@ -1401,106 +1552,301 @@ function App() {
         <div className="settings-card" style={{ maxWidth: '650px' }}>
           <div className="card-header">
             <Icon icon="solar:shield-user-bold-duotone" style={{ fontSize: '1.8rem', color: 'var(--accent-purple)' }} />
-            <h2>Admin Panel - Manage Words</h2>
+            <h2>Admin Panel</h2>
           </div>
 
-          {/* Form Tambah Kata */}
-          <form onSubmit={handleAddWordSubmit} className="admin-form" style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-            <h3 style={{ fontSize: '1rem', fontWeight: '700', color: 'var(--accent-teal)' }}>Add New Word</h3>
-            <div style={{ display: 'flex', gap: '0.5rem', width: '100%' }}>
-              <input
-                type="text"
-                placeholder="WORD (A-Z)"
-                value={newWord}
-                onChange={(e) => setNewWord(e.target.value)}
-                style={{
-                  flex: '1',
-                  padding: '0.6rem 0.8rem',
-                  borderRadius: '10px',
-                  border: '1px solid var(--glass-border)',
-                  background: 'var(--glass-bg)',
-                  color: 'var(--text-main)',
-                  fontSize: '0.85rem',
-                  fontWeight: '600'
-                }}
-                required
-              />
-              <input
-                type="text"
-                placeholder="Clue"
-                value={newClue}
-                onChange={(e) => setNewClue(e.target.value)}
-                style={{
-                  flex: '2',
-                  padding: '0.6rem 0.8rem',
-                  borderRadius: '10px',
-                  border: '1px solid var(--glass-border)',
-                  background: 'var(--glass-bg)',
-                  color: 'var(--text-main)',
-                  fontSize: '0.85rem',
-                  fontWeight: '600'
-                }}
-                required
-              />
-              <button type="submit" className="btn btn-primary" style={{ padding: '0.6rem 1rem' }} disabled={actionLoading}>
-                Add
-              </button>
-            </div>
-            {adminError && <p style={{ color: 'var(--color-error)', fontSize: '0.8rem', textAlign: 'center' }}>{adminError}</p>}
-            {adminSuccess && <p style={{ color: 'var(--color-success)', fontSize: '0.8rem', textAlign: 'center' }}>{adminSuccess}</p>}
-          </form>
-
-          <hr style={{ borderColor: 'var(--glass-border)', margin: '0.5rem 0' }} />
-
-          {/* Daftar Kata */}
-          <h3 style={{ fontSize: '1rem', fontWeight: '700', color: 'var(--accent-purple)' }}>
-            Word Database ({dbWords.length} words)
-          </h3>
-
-          <div style={{ maxHeight: '250px', overflowY: 'auto', border: '1px solid var(--glass-border)', borderRadius: '12px', padding: '0.5rem' }}>
-            {dbWords.length === 0 ? (
-              <p style={{ textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.85rem', padding: '1rem' }}>
-                No custom words in the database yet.
-              </p>
-            ) : (
-              <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.85rem' }}>
-                <thead>
-                  <tr style={{ borderBottom: '1px solid var(--glass-border)' }}>
-                    <th style={{ padding: '0.5rem', color: 'var(--accent-teal)' }}>Word</th>
-                    <th style={{ padding: '0.5rem', color: 'var(--accent-teal)' }}>Clue</th>
-                    <th style={{ padding: '0.5rem', color: 'var(--accent-teal)', textAlign: 'right' }}>Action</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {dbWords.map((item, idx) => (
-                    <tr key={`word-${idx}`} style={{ borderBottom: '1px solid var(--glass-border)' }}>
-                      <td style={{ padding: '0.5rem', fontWeight: '700', textTransform: 'uppercase' }}>{item.word}</td>
-                      <td style={{ padding: '0.5rem', color: 'var(--text-muted)' }}>{item.clue}</td>
-                      <td style={{ padding: '0.5rem', textAlign: 'right' }}>
-                        <button
-                          type="button"
-                          onClick={() => handleDeleteWord(item.word)}
-                          disabled={actionLoading}
-                          style={{
-                            background: 'transparent',
-                            border: 'none',
-                            color: 'var(--color-error)',
-                            cursor: 'pointer',
-                            display: 'inline-flex',
-                            alignItems: 'center'
-                          }}
-                        >
-                          <Icon icon="solar:trash-bin-trash-bold" />
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            )}
+          {/* Admin Tabs */}
+          <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem', borderBottom: '1px solid var(--glass-border)', paddingBottom: '0.5rem', width: '100%' }}>
+            <button
+              className={`btn ${adminTab === 'words' ? 'btn-primary' : 'btn-secondary'}`}
+              style={{ padding: '0.5rem 1rem', fontSize: '0.85rem', flex: 1, justifyContent: 'center' }}
+              onClick={() => { setAdminTab('words'); setAdminError(''); setAdminSuccess(''); }}
+            >
+              <Icon icon="solar:letter-bold" /> Manage Words
+            </button>
+            <button
+              className={`btn ${adminTab === 'leaderboard' ? 'btn-primary' : 'btn-secondary'}`}
+              style={{ padding: '0.5rem 1rem', fontSize: '0.85rem', flex: 1, justifyContent: 'center' }}
+              onClick={() => { setAdminTab('leaderboard'); setAdminError(''); setAdminSuccess(''); }}
+            >
+              <Icon icon="solar:cup-first-bold-duotone" /> Manage Leaderboard
+            </button>
           </div>
 
-          <button className="btn btn-secondary" onClick={() => menuNavigate('menu')} style={{ alignSelf: 'center' }}>
+          {adminError && <p style={{ color: 'var(--color-error)', fontSize: '0.85rem', textAlign: 'center', margin: '0.5rem 0' }}>{adminError}</p>}
+          {adminSuccess && <p style={{ color: 'var(--color-success)', fontSize: '0.85rem', textAlign: 'center', margin: '0.5rem 0' }}>{adminSuccess}</p>}
+
+          {adminTab === 'words' && (
+            <>
+              {/* Form Tambah Kata */}
+              <form onSubmit={handleAddWordSubmit} className="admin-form" style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', width: '100%' }}>
+                <h3 style={{ fontSize: '1rem', fontWeight: '700', color: 'var(--accent-teal)' }}>Add New Word</h3>
+                <div style={{ display: 'flex', gap: '0.5rem', width: '100%' }}>
+                  <input
+                    type="text"
+                    placeholder="WORD (A-Z)"
+                    value={newWord}
+                    onChange={(e) => setNewWord(e.target.value)}
+                    style={{
+                      flex: '1',
+                      padding: '0.6rem 0.8rem',
+                      borderRadius: '10px',
+                      border: '1px solid var(--glass-border)',
+                      background: 'var(--glass-bg)',
+                      color: 'var(--text-main)',
+                      fontSize: '0.85rem',
+                      fontWeight: '600'
+                    }}
+                    required
+                  />
+                  <input
+                    type="text"
+                    placeholder="Clue"
+                    value={newClue}
+                    onChange={(e) => setNewClue(e.target.value)}
+                    style={{
+                      flex: '2',
+                      padding: '0.6rem 0.8rem',
+                      borderRadius: '10px',
+                      border: '1px solid var(--glass-border)',
+                      background: 'var(--glass-bg)',
+                      color: 'var(--text-main)',
+                      fontSize: '0.85rem',
+                      fontWeight: '600'
+                    }}
+                    required
+                  />
+                  <button type="submit" className="btn btn-primary" style={{ padding: '0.6rem 1rem' }} disabled={actionLoading}>
+                    Add
+                  </button>
+                </div>
+              </form>
+
+              {/* Form Import Excel */}
+              <form onSubmit={handlePreviewExcel} className="admin-form" style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginTop: '1rem', padding: '1rem', border: '1px dashed var(--glass-border)', borderRadius: '12px', background: 'rgba(255,255,255,0.02)', width: '100%' }}>
+                <h3 style={{ fontSize: '1.05rem', fontWeight: '700', color: 'var(--accent-purple)' }}>Import Words from Excel</h3>
+                <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', lineHeight: '1.5' }}>
+                  <strong>Excel File Format:</strong>
+                  <ul style={{ margin: '0.35rem 0 0.5rem 1.25rem', padding: 0 }}>
+                    <li>File extension must be <strong>.xlsx</strong></li>
+                    <li>First row must be the header row (ignored during upload)</li>
+                    <li><strong>Column A</strong>: Word / Kata (e.g. <code>KERTAS</code>)</li>
+                    <li><strong>Column B</strong>: Clue / Petunjuk (e.g. <code>Alat untuk menulis</code>)</li>
+                  </ul>
+                </div>
+                <div style={{ display: 'flex', gap: '0.5rem', width: '100%', alignItems: 'center' }}>
+                  <input
+                    id="excel-file-input"
+                    type="file"
+                    accept=".xlsx"
+                    onChange={(e) => {
+                      setExcelFile(e.target.files[0]);
+                      setExcelPreviewData([]);
+                    }}
+                    style={{
+                      flex: '1',
+                      padding: '0.4rem',
+                      borderRadius: '8px',
+                      border: '1px solid var(--glass-border)',
+                      background: 'var(--glass-bg)',
+                      color: 'var(--text-main)',
+                      fontSize: '0.8rem'
+                    }}
+                    required
+                  />
+                  <button type="submit" className="btn btn-primary" style={{ padding: '0.6rem 1rem' }} disabled={actionLoading || !excelFile}>
+                    Preview
+                  </button>
+                </div>
+              </form>
+
+              {/* Excel Preview Table */}
+              {excelPreviewData.length > 0 && (
+                <div className="admin-form" style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginTop: '1rem', padding: '1rem', border: '1px solid var(--glass-border)', borderRadius: '12px', background: 'rgba(255,255,255,0.01)', width: '100%' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <h3 style={{ fontSize: '1rem', fontWeight: '700', color: 'var(--accent-teal)', margin: 0 }}>Excel Import Preview ({excelPreviewData.length} words found)</h3>
+                    <button
+                      type="button"
+                      className="btn btn-secondary"
+                      onClick={() => setExcelPreviewData([])}
+                      style={{ padding: '0.4rem 0.8rem', fontSize: '0.8rem' }}
+                    >
+                      Clear Preview
+                    </button>
+                  </div>
+                  <div style={{ maxHeight: '180px', overflowY: 'auto', border: '1px solid var(--glass-border)', borderRadius: '8px', padding: '0.25rem' }}>
+                    <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.8rem' }}>
+                      <thead>
+                        <tr style={{ borderBottom: '1px solid var(--glass-border)' }}>
+                          <th style={{ padding: '0.4rem', color: 'var(--accent-teal)' }}>Word</th>
+                          <th style={{ padding: '0.4rem', color: 'var(--accent-teal)' }}>Clue</th>
+                          <th style={{ padding: '0.4rem', color: 'var(--accent-teal)', textAlign: 'right' }}>Status</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {excelPreviewData.map((item, idx) => (
+                          <tr key={`prev-${idx}`} style={{ borderBottom: '1px solid var(--glass-border)' }}>
+                            <td style={{ padding: '0.4rem', fontWeight: '700', textTransform: 'uppercase' }}>{item.word}</td>
+                            <td style={{ padding: '0.4rem', color: 'var(--text-muted)' }}>{item.clue}</td>
+                            <td style={{ padding: '0.4rem', textAlign: 'right', fontWeight: '600' }}>
+                              {item.exists ? (
+                                <span style={{ color: 'var(--color-error)', fontSize: '0.75rem' }}>Exists (Skip)</span>
+                              ) : (
+                                <span style={{ color: 'var(--color-success)', fontSize: '0.75rem' }}>New</span>
+                              )}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                  <button
+                    type="button"
+                    className="btn btn-primary"
+                    onClick={handleImportExcel}
+                    style={{ width: '100%', justifyContent: 'center', marginTop: '0.5rem' }}
+                    disabled={actionLoading}
+                  >
+                    <Icon icon="solar:import-bold" /> Confirm & Import {excelPreviewData.filter(x => !x.exists).length} New Words
+                  </button>
+                </div>
+              )}
+
+              <hr style={{ borderColor: 'var(--glass-border)', margin: '1rem 0', width: '100%' }} />
+
+              {/* Daftar Kata */}
+              <h3 style={{ fontSize: '1rem', fontWeight: '700', color: 'var(--accent-purple)', width: '100%' }}>
+                Word Database ({dbWords.length} words)
+              </h3>
+
+              <div style={{ maxHeight: '200px', overflowY: 'auto', border: '1px solid var(--glass-border)', borderRadius: '12px', padding: '0.5rem', width: '100%' }}>
+                {dbWords.length === 0 ? (
+                  <p style={{ textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.85rem', padding: '1rem' }}>
+                    No custom words in the database yet.
+                  </p>
+                ) : (
+                  <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.85rem' }}>
+                    <thead>
+                      <tr style={{ borderBottom: '1px solid var(--glass-border)' }}>
+                        <th style={{ padding: '0.5rem', color: 'var(--accent-teal)' }}>Word</th>
+                        <th style={{ padding: '0.5rem', color: 'var(--accent-teal)' }}>Clue</th>
+                        <th style={{ padding: '0.5rem', color: 'var(--accent-teal)', textAlign: 'right' }}>Action</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {dbWords.map((item, idx) => (
+                        <tr key={`word-${idx}`} style={{ borderBottom: '1px solid var(--glass-border)' }}>
+                          <td style={{ padding: '0.5rem', fontWeight: '700', textTransform: 'uppercase' }}>{item.word}</td>
+                          <td style={{ padding: '0.5rem', color: 'var(--text-muted)' }}>{item.clue}</td>
+                          <td style={{ padding: '0.5rem', textAlign: 'right' }}>
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteWord(item.word)}
+                              disabled={actionLoading}
+                              style={{
+                                background: 'transparent',
+                                border: 'none',
+                                color: 'var(--color-error)',
+                                cursor: 'pointer',
+                                display: 'inline-flex',
+                                alignItems: 'center'
+                              }}
+                            >
+                              <Icon icon="solar:trash-bin-trash-bold" />
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                )}
+              </div>
+            </>
+          )}
+
+          {adminTab === 'leaderboard' && (
+            <>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', marginBottom: '0.75rem' }}>
+                <h3 style={{ fontSize: '1rem', fontWeight: '700', color: 'var(--accent-purple)', margin: 0 }}>
+                  Manage Leaderboard Entries
+                </h3>
+                {leaderboardData.length > 0 && (
+                  <button
+                    type="button"
+                    className="btn btn-secondary"
+                    onClick={handleClearAllLeaderboard}
+                    disabled={actionLoading}
+                    style={{
+                      borderColor: 'var(--color-error)',
+                      color: 'var(--color-error)',
+                      padding: '0.4rem 0.8rem',
+                      fontSize: '0.8rem',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '0.25rem'
+                    }}
+                  >
+                    <Icon icon="solar:trash-bin-trash-bold" /> Clear All
+                  </button>
+                )}
+              </div>
+
+              <div style={{ maxHeight: '350px', overflowY: 'auto', border: '1px solid var(--glass-border)', borderRadius: '12px', padding: '0.5rem', width: '100%' }}>
+                {leaderboardData.length === 0 ? (
+                  <p style={{ textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.85rem', padding: '1rem' }}>
+                    No leaderboard entries yet.
+                  </p>
+                ) : (
+                  <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.85rem' }}>
+                    <thead>
+                      <tr style={{ borderBottom: '1px solid var(--glass-border)' }}>
+                        <th style={{ padding: '0.5rem', color: 'var(--accent-teal)' }}>Rank</th>
+                        <th style={{ padding: '0.5rem', color: 'var(--accent-teal)' }}>Name</th>
+                        <th style={{ padding: '0.5rem', color: 'var(--accent-teal)' }}>Difficulty</th>
+                        <th style={{ padding: '0.5rem', color: 'var(--accent-teal)' }}>Score</th>
+                        <th style={{ padding: '0.5rem', color: 'var(--accent-teal)' }}>Time</th>
+                        <th style={{ padding: '0.5rem', color: 'var(--accent-teal)', textAlign: 'right' }}>Action</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {leaderboardData.map((item, idx) => (
+                        <tr key={`admin-lb-${idx}`} style={{ borderBottom: '1px solid var(--glass-border)' }}>
+                          <td style={{ padding: '0.5rem' }}>{idx + 1}</td>
+                          <td style={{ padding: '0.5rem', fontWeight: '700' }}>{item.name}</td>
+                          <td style={{ padding: '0.5rem' }}>
+                            <span className={`difficulty-badge difficulty-${item.difficulty}`}>
+                              {item.difficulty}
+                            </span>
+                          </td>
+                          <td style={{ padding: '0.5rem', fontWeight: '800', color: 'var(--accent-teal)' }}>{item.score}</td>
+                          <td style={{ padding: '0.5rem', fontFamily: 'monospace' }}>{formatTime(item.timeSpent)}</td>
+                          <td style={{ padding: '0.5rem', textAlign: 'right' }}>
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteLeaderboard(item.id)}
+                              disabled={actionLoading}
+                              style={{
+                                background: 'transparent',
+                                border: 'none',
+                                color: 'var(--color-error)',
+                                cursor: 'pointer',
+                                display: 'inline-flex',
+                                alignItems: 'center'
+                              }}
+                            >
+                              <Icon icon="solar:trash-bin-trash-bold" />
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                )}
+              </div>
+            </>
+          )}
+
+          <button className="btn btn-secondary" onClick={() => menuNavigate('menu')} style={{ alignSelf: 'center', marginTop: '1rem' }}>
             Back to Main Menu
           </button>
         </div>
@@ -1912,15 +2258,51 @@ function App() {
           </div>
         </div>
       )}
+      {/* Custom Confirm Dialog Modal */}
+      {confirmDialog.show && (
+        <div className="modal-overlay">
+          <div className="modal-content animate-slide-in" style={{ maxWidth: '400px' }}>
+            <div className="modal-icon" style={{ color: 'var(--accent-purple)' }}>
+              <Icon icon="solar:question-square-bold-duotone" style={{ fontSize: '4.5rem' }} />
+            </div>
+            <h2>{confirmDialog.title}</h2>
+            <p style={{ margin: '10px 0', color: 'var(--text-muted)', lineHeight: '1.5' }}>
+              {confirmDialog.message}
+            </p>
+            <div style={{ display: 'flex', gap: '1rem', width: '100%', marginTop: '1rem' }}>
+              <button
+                className="btn btn-primary"
+                style={{ flex: 1, justifyContent: 'center' }}
+                onClick={() => {
+                  playSound('click');
+                  confirmDialog.onConfirm();
+                }}
+              >
+                Confirm
+              </button>
+              <button
+                className="btn btn-secondary"
+                style={{ flex: 1, justifyContent: 'center' }}
+                onClick={() => {
+                  playSound('click');
+                  setConfirmDialog({ show: false, title: '', message: '', onConfirm: null });
+                }}
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Toast Progress Pop-up */}
       {toast && (
         <div
           className="toast-progress"
           style={{
             position: 'fixed',
-            top: '50%',
-            left: '50%',
-            transform: 'translate(-50%, -50%)',
+            top: '20px',
+            right: '20px',
             background: 'var(--bg-secondary)',
             border: '2px solid var(--accent-purple)',
             borderRadius: '16px',

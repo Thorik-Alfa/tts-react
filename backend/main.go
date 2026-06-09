@@ -7,6 +7,8 @@ import (
 	"os"
 	"strconv"
 	"strings"
+
+	"github.com/xuri/excelize/v2"
 )
 
 func enableCors(w http.ResponseWriter) {
@@ -98,6 +100,43 @@ func handleLeaderboard(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if r.Method == "DELETE" {
+		allParam := r.URL.Query().Get("all")
+		if allParam == "true" {
+			err := ClearAllLeaderboard()
+			if err != nil {
+				log.Printf("Error clearing leaderboard: %v\n", err)
+				http.Error(w, "Failed to clear leaderboard", http.StatusInternalServerError)
+				return
+			}
+			w.Header().Set("Content-Type", "application/json")
+			json.NewEncoder(w).Encode(map[string]string{"status": "success"})
+			return
+		}
+
+		idStr := r.URL.Query().Get("id")
+		if idStr == "" {
+			http.Error(w, "ID parameter is required", http.StatusBadRequest)
+			return
+		}
+		id, err := strconv.Atoi(idStr)
+		if err != nil {
+			http.Error(w, "Invalid ID parameter", http.StatusBadRequest)
+			return
+		}
+
+		err = DeleteLeaderboardEntry(id)
+		if err != nil {
+			log.Printf("Error deleting leaderboard entry: %v\n", err)
+			http.Error(w, "Failed to delete leaderboard entry", http.StatusInternalServerError)
+			return
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(map[string]string{"status": "success"})
+		return
+	}
+
 	http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 }
 
@@ -166,6 +205,169 @@ func handleWords(w http.ResponseWriter, r *http.Request) {
 	http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 }
 
+func handleImportWords(w http.ResponseWriter, r *http.Request) {
+	enableCors(w)
+	if r.Method == "OPTIONS" {
+		w.WriteHeader(http.StatusOK)
+		return
+	}
+
+	if r.Method != "POST" {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	// Parse multipart form (10 MB limit)
+	err := r.ParseMultipartForm(10 << 20)
+	if err != nil {
+		http.Error(w, "Unable to parse form", http.StatusBadRequest)
+		return
+	}
+
+	file, _, err := r.FormFile("file")
+	if err != nil {
+		http.Error(w, "File is required", http.StatusBadRequest)
+		return
+	}
+	defer file.Close()
+
+	f, err := excelize.OpenReader(file)
+	if err != nil {
+		log.Printf("Error opening excel file: %v\n", err)
+		http.Error(w, "Invalid excel file format", http.StatusBadRequest)
+		return
+	}
+	defer f.Close()
+
+	sheets := f.GetSheetList()
+	if len(sheets) == 0 {
+		http.Error(w, "No sheets found in Excel file", http.StatusBadRequest)
+		return
+	}
+
+	rows, err := f.GetRows(sheets[0])
+	if err != nil {
+		log.Printf("Error reading rows: %v\n", err)
+		http.Error(w, "Failed to read excel content", http.StatusInternalServerError)
+		return
+	}
+
+	insertedCount := 0
+	for i, row := range rows {
+		// Skip header row
+		if i == 0 {
+			continue
+		}
+		if len(row) < 2 {
+			continue
+		}
+
+		word := strings.TrimSpace(row[0])
+		clue := strings.TrimSpace(row[1])
+
+		if word != "" && clue != "" {
+			err := AddWord(word, clue)
+			if err != nil {
+				log.Printf("Error importing word %s: %v\n", word, err)
+				continue
+			}
+			insertedCount++
+		}
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"status": "success",
+		"count":  insertedCount,
+	})
+}
+
+type PreviewWord struct {
+	Word   string `json:"word"`
+	Clue   string `json:"clue"`
+	Exists bool   `json:"exists"`
+}
+
+func handlePreviewWords(w http.ResponseWriter, r *http.Request) {
+	enableCors(w)
+	if r.Method == "OPTIONS" {
+		w.WriteHeader(http.StatusOK)
+		return
+	}
+
+	if r.Method != "POST" {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	// Parse multipart form (10 MB limit)
+	err := r.ParseMultipartForm(10 << 20)
+	if err != nil {
+		http.Error(w, "Unable to parse form", http.StatusBadRequest)
+		return
+	}
+
+	file, _, err := r.FormFile("file")
+	if err != nil {
+		http.Error(w, "File is required", http.StatusBadRequest)
+		return
+	}
+	defer file.Close()
+
+	f, err := excelize.OpenReader(file)
+	if err != nil {
+		log.Printf("Error opening excel file: %v\n", err)
+		http.Error(w, "Invalid excel file format", http.StatusBadRequest)
+		return
+	}
+	defer f.Close()
+
+	sheets := f.GetSheetList()
+	if len(sheets) == 0 {
+		http.Error(w, "No sheets found in Excel file", http.StatusBadRequest)
+		return
+	}
+
+	rows, err := f.GetRows(sheets[0])
+	if err != nil {
+		log.Printf("Error reading rows: %v\n", err)
+		http.Error(w, "Failed to read excel content", http.StatusInternalServerError)
+		return
+	}
+
+	var previewData []PreviewWord
+	for i, row := range rows {
+		// Skip header row
+		if i == 0 {
+			continue
+		}
+		if len(row) < 2 {
+			continue
+		}
+
+		word := strings.TrimSpace(row[0])
+		clue := strings.TrimSpace(row[1])
+
+		if word != "" && clue != "" {
+			exists, err := WordExists(word)
+			if err != nil {
+				log.Printf("Error checking word existence: %v\n", err)
+			}
+			previewData = append(previewData, PreviewWord{
+				Word:   strings.ToUpper(word),
+				Clue:   clue,
+				Exists: exists,
+			})
+		}
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"status": "success",
+		"data":   previewData,
+	})
+}
+
 func main() {
 	log.Println("Initializing database...")
 	if err := InitDB(); err != nil {
@@ -175,6 +377,8 @@ func main() {
 	http.HandleFunc("/api/generate", handleGenerate)
 	http.HandleFunc("/api/leaderboard", handleLeaderboard)
 	http.HandleFunc("/api/words", handleWords)
+	http.HandleFunc("/api/words/import", handleImportWords)
+	http.HandleFunc("/api/words/import-preview", handlePreviewWords)
 
 	port := os.Getenv("PORT")
 	if port == "" {
